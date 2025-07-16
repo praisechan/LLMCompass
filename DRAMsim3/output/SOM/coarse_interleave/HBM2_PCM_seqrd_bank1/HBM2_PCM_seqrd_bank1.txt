@@ -1,0 +1,63 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 129 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 153 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 65cycle
+last_read_cmd_cycle: 185 cycle
+last_read_cmd_cycle: 217 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 257cycle
+last_read_cmd_cycle: 185 cycle
+last_read_cmd_cycle: 217 cycle
+last_read_cmd_cycle: 249 cycle
+last_read_cmd_cycle: 281 cycle
+last_read_cmd_cycle: 313 cycle
+last_read_cmd_cycle: 345 cycle
+last_read_cmd_cycle: 377 cycle
+last_read_cmd_cycle: 409 cycle
+last transaction queued at: 1025cycle
+last_read_cmd_cycle: 967 cycle
+last_read_cmd_cycle: 999 cycle
+last_read_cmd_cycle: 1031 cycle
+last_read_cmd_cycle: 1063 cycle
+last_read_cmd_cycle: 1095 cycle
+last_read_cmd_cycle: 1127 cycle
+last_read_cmd_cycle: 1159 cycle
+last_read_cmd_cycle: 1191 cycle
+last transaction queued at: 4389cycle
+last_read_cmd_cycle: 4357 cycle
+last_read_cmd_cycle: 4357 cycle
+last_read_cmd_cycle: 4357 cycle
+last_read_cmd_cycle: 4357 cycle
+last_read_cmd_cycle: 4509 cycle
+last_read_cmd_cycle: 4541 cycle
+last_read_cmd_cycle: 4558 cycle
+last_read_cmd_cycle: 4558 cycle
+last transaction queued at: 17553cycle
+last_read_cmd_cycle: 17495 cycle
+last_read_cmd_cycle: 17527 cycle
+last_read_cmd_cycle: 17559 cycle
+last_read_cmd_cycle: 17591 cycle
+last_read_cmd_cycle: 17623 cycle
+last_read_cmd_cycle: 17655 cycle
+last_read_cmd_cycle: 17687 cycle
+last_read_cmd_cycle: 17719 cycle

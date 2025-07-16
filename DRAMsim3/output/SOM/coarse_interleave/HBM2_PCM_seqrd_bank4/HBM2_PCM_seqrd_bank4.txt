@@ -1,0 +1,63 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 129 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 153 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 154cycle
+last_read_cmd_cycle: 249 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 615cycle
+last_read_cmd_cycle: 403 cycle
+last_read_cmd_cycle: 710 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 2457cycle
+last_read_cmd_cycle: 403 cycle
+last_read_cmd_cycle: 710 cycle
+last_read_cmd_cycle: 1017 cycle
+last_read_cmd_cycle: 1324 cycle
+last_read_cmd_cycle: 1631 cycle
+last_read_cmd_cycle: 1938 cycle
+last_read_cmd_cycle: 2245 cycle
+last_read_cmd_cycle: 2552 cycle
+last transaction queued at: 10839cycle
+last_read_cmd_cycle: 8757 cycle
+last_read_cmd_cycle: 9064 cycle
+last_read_cmd_cycle: 9371 cycle
+last_read_cmd_cycle: 9678 cycle
+last_read_cmd_cycle: 9985 cycle
+last_read_cmd_cycle: 10292 cycle
+last_read_cmd_cycle: 10599 cycle
+last_read_cmd_cycle: 10934 cycle
+last transaction queued at: 44403cycle
+last_read_cmd_cycle: 41976 cycle
+last_read_cmd_cycle: 42311 cycle
+last_read_cmd_cycle: 42646 cycle
+last_read_cmd_cycle: 43378 cycle
+last_read_cmd_cycle: 43577 cycle
+last_read_cmd_cycle: 43884 cycle
+last_read_cmd_cycle: 44191 cycle
+last_read_cmd_cycle: 44498 cycle

@@ -1,0 +1,63 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 44 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 68 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 65cycle
+last_read_cmd_cycle: 100 cycle
+last_read_cmd_cycle: 132 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 257cycle
+last_read_cmd_cycle: 100 cycle
+last_read_cmd_cycle: 132 cycle
+last_read_cmd_cycle: 164 cycle
+last_read_cmd_cycle: 196 cycle
+last_read_cmd_cycle: 228 cycle
+last_read_cmd_cycle: 260 cycle
+last_read_cmd_cycle: 292 cycle
+last_read_cmd_cycle: 324 cycle
+last transaction queued at: 1025cycle
+last_read_cmd_cycle: 882 cycle
+last_read_cmd_cycle: 914 cycle
+last_read_cmd_cycle: 946 cycle
+last_read_cmd_cycle: 978 cycle
+last_read_cmd_cycle: 1010 cycle
+last_read_cmd_cycle: 1042 cycle
+last_read_cmd_cycle: 1074 cycle
+last_read_cmd_cycle: 1106 cycle
+last transaction queued at: 4097cycle
+last_read_cmd_cycle: 4007 cycle
+last_read_cmd_cycle: 4036 cycle
+last_read_cmd_cycle: 4013 cycle
+last_read_cmd_cycle: 4036 cycle
+last_read_cmd_cycle: 4068 cycle
+last_read_cmd_cycle: 4100 cycle
+last_read_cmd_cycle: 4132 cycle
+last_read_cmd_cycle: 4178 cycle
+last transaction queued at: 16385cycle
+last_read_cmd_cycle: 16242 cycle
+last_read_cmd_cycle: 16274 cycle
+last_read_cmd_cycle: 16306 cycle
+last_read_cmd_cycle: 16338 cycle
+last_read_cmd_cycle: 16370 cycle
+last_read_cmd_cycle: 16402 cycle
+last_read_cmd_cycle: 16434 cycle
+last_read_cmd_cycle: 16466 cycle

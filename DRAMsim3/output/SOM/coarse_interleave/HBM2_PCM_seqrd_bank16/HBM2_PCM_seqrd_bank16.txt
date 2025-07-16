@@ -1,0 +1,63 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 129 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 153 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 154cycle
+last_read_cmd_cycle: 249 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 616cycle
+last_read_cmd_cycle: 711 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 2463cycle
+last_read_cmd_cycle: 1327 cycle
+last_read_cmd_cycle: 2558 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 10536cycle
+last_read_cmd_cycle: 1327 cycle
+last_read_cmd_cycle: 2558 cycle
+last_read_cmd_cycle: 3789 cycle
+last_read_cmd_cycle: 5411 cycle
+last_read_cmd_cycle: 6616 cycle
+last_read_cmd_cycle: 8256 cycle
+last_read_cmd_cycle: 9400 cycle
+last_read_cmd_cycle: 10631 cycle
+last transaction queued at: 43349cycle
+last_read_cmd_cycle: 33802 cycle
+last_read_cmd_cycle: 35033 cycle
+last_read_cmd_cycle: 36645 cycle
+last_read_cmd_cycle: 37850 cycle
+last_read_cmd_cycle: 39490 cycle
+last_read_cmd_cycle: 40599 cycle
+last_read_cmd_cycle: 41830 cycle
+last_read_cmd_cycle: 43444 cycle

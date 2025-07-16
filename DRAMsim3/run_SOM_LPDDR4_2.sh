@@ -1,0 +1,16 @@
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_4 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n4_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_16 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n16_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_64 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n64_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_256 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n256_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_1024 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n1024_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_4096 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n4096_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_16384 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n16384_rw2.trace
+./build/dramsim3main configs/HBM2_8Gb_x128.ini -o ./output/LLMcompass/test/HBM2_8ch -f num_req_65536 -t ./tests/LLMcompass/HBM2_8ch/dramsim3_readonly_mult_ch_stream_i0_n65536_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_4 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n4_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_16 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n16_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_64 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n64_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_256 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n256_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_1024 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n1024_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_4096 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n4096_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_16384 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n16384_rw2.trace
+# ./build/dramsim3main configs/LPDDR4_8Gb_x16_2400_4ch.ini -o ./output/LLMcompass/test/LPDDR4_4ch -f num_req_65536 -t ./tests/LLMcompass/LPDDR4_4ch_new/dramsim3_readonly_mult_ch_stream_i0_n65536_rw2.trace

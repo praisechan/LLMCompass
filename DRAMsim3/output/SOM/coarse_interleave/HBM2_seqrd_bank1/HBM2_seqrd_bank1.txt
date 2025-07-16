@@ -1,0 +1,63 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 23 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 47 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 65cycle
+last_read_cmd_cycle: 79 cycle
+last_read_cmd_cycle: 111 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last_read_cmd_cycle: 0 cycle
+last transaction queued at: 257cycle
+last_read_cmd_cycle: 79 cycle
+last_read_cmd_cycle: 111 cycle
+last_read_cmd_cycle: 143 cycle
+last_read_cmd_cycle: 175 cycle
+last_read_cmd_cycle: 207 cycle
+last_read_cmd_cycle: 239 cycle
+last_read_cmd_cycle: 271 cycle
+last_read_cmd_cycle: 303 cycle
+last transaction queued at: 1025cycle
+last_read_cmd_cycle: 861 cycle
+last_read_cmd_cycle: 893 cycle
+last_read_cmd_cycle: 925 cycle
+last_read_cmd_cycle: 957 cycle
+last_read_cmd_cycle: 989 cycle
+last_read_cmd_cycle: 1021 cycle
+last_read_cmd_cycle: 1053 cycle
+last_read_cmd_cycle: 1085 cycle
+last transaction queued at: 4097cycle
+last_read_cmd_cycle: 4224 cycle
+last_read_cmd_cycle: 4273 cycle
+last_read_cmd_cycle: 4251 cycle
+last_read_cmd_cycle: 4251 cycle
+last_read_cmd_cycle: 4251 cycle
+last_read_cmd_cycle: 4251 cycle
+last_read_cmd_cycle: 4251 cycle
+last_read_cmd_cycle: 4302 cycle
+last transaction queued at: 16757cycle
+last_read_cmd_cycle: 16593 cycle
+last_read_cmd_cycle: 16625 cycle
+last_read_cmd_cycle: 16657 cycle
+last_read_cmd_cycle: 16689 cycle
+last_read_cmd_cycle: 16721 cycle
+last_read_cmd_cycle: 16753 cycle
+last_read_cmd_cycle: 16785 cycle
+last_read_cmd_cycle: 16817 cycle

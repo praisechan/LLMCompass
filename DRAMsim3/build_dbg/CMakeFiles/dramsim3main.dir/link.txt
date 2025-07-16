@@ -1,0 +1,1 @@
+/home/juchanlee/anaconda3/bin/c++ -O3 -DNDEBUG -rdynamic CMakeFiles/dramsim3main.dir/src/main.cc.o CMakeFiles/dramsim3main.dir/src/cpu.cc.o -o dramsim3main  -Wl,-rpath,/home/juchanlee/LLMcompass_SOM/DRAMsim3 /home/juchanlee/LLMcompass_SOM/DRAMsim3/libdramsim3.so

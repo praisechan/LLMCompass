@@ -1,0 +1,14 @@
+last transaction queued at: 5cycle
+last_read_cmd_cycle: 62 cycle
+last transaction queued at: 17cycle
+last_read_cmd_cycle: 158 cycle
+last transaction queued at: 115cycle
+last_read_cmd_cycle: 318 cycle
+last transaction queued at: 883cycle
+last_read_cmd_cycle: 1086 cycle
+last transaction queued at: 3955cycle
+last_read_cmd_cycle: 4158 cycle
+last transaction queued at: 16325cycle
+last_read_cmd_cycle: 16524 cycle
+last transaction queued at: 65839cycle
+last_read_cmd_cycle: 66034 cycle

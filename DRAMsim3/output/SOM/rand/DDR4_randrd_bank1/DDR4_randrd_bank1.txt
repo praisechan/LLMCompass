@@ -1,0 +1,8 @@
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
+WARNING: Output directory ./output/SOM/rand/DDR4_SOM_rand_bank1 not exists! Using current directory for output!
