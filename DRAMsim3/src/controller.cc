@@ -303,8 +303,8 @@ void Controller::PrintFinalStats() {
     float trans_finish_time = trans_finish_cycle * config_.tCK;
     simple_stats_.AddJson("trans_finish_time", trans_finish_time);
     simple_stats_.AddJson("trans_finish_cycle", trans_finish_cycle);
-    std::cout << "trans_finish_time: " << trans_finish_time << " ns\n";
-    std::cout << "trans_finish_cycle: " << trans_finish_cycle << " cycle\n";
+    // std::cout << "trans_finish_time: " << trans_finish_time << " ns\n";
+    // std::cout << "trans_finish_cycle: " << trans_finish_cycle << " cycle\n";
 
     simple_stats_.PrintFinalStats();
 

@@ -1066,19 +1066,19 @@ class Matmul(Operator):
                 #   num_bank = 8
                 #   num_ch = 4
                 #   mem_type = "LPDDR4"    
-                #   config_file = "./DRAMsim3/configs/LPDDR4_8Gb_x16_2400_4ch.ini"
+                #   config_file = "./DRAMsim3/configs/LLMcompass/LPDDR4_8Gb_x16_2400_4ch.ini"
                 if self.mem_name == "HBM2":
                   size = int(M * N * word_size / 64) #divide by 64 Byte
                   num_bank = 16
                   num_ch = 40
                   mem_type = "HBM2"
-                  config_file = "./DRAMsim3/configs/HBM2_8Gb_x128_40ch.ini"
+                  config_file = "./DRAMsim3/configs/LLMcompass/HBM2_8Gb_x128_40ch.ini"
                 elif self.mem_name == "HBM3":
                   size = int(M * N * word_size / 64) #divide by 64 Byte
                   num_bank = 16
                   num_ch = 40
                   mem_type = "HBM3"
-                  config_file = "./DRAMsim3/configs/HBM3_8Gb_x128_40ch.ini"
+                  config_file = "./DRAMsim3/configs/LLMcompass/HBM3_8Gb_x128_40ch.ini"
                 else:
                     raise ValueError("Wrong memory name!")
 
@@ -1142,7 +1142,7 @@ class Matmul(Operator):
             freq_in_GHz = chiplet_module.compute_module.clock_freq / 10**9
             io_cycle = io_latency / freq_in_GHz
 
-            return io_cycle, ceil(M * N * data_type.word_size)
+            return io_cycle
                         
             # return ceil(
             #     M

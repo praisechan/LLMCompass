@@ -399,12 +399,12 @@ void Config::SetAddressMapping() {
     int actual_col_bits = LogBase2(columns) - col_low_bits;
 
     // debug
-    std::cout << "BL" << BL << "\n";
-    std::cout << "bus_width" << bus_width << "\n";
-    std::cout << "columns" << columns << "\n";
-    std::cout << "col_low_bits" << col_low_bits << "\n";
-    std::cout << "actual_col_bits" << actual_col_bits << "\n";
-    std::cout << "shift_bits" << shift_bits << "\n";
+    // std::cout << "BL" << BL << "\n";
+    // std::cout << "bus_width" << bus_width << "\n";
+    // std::cout << "columns" << columns << "\n";
+    // std::cout << "col_low_bits" << col_low_bits << "\n";
+    // std::cout << "actual_col_bits" << actual_col_bits << "\n";
+    // std::cout << "shift_bits" << shift_bits << "\n";
 
     /////////////////////
 
@@ -418,12 +418,12 @@ void Config::SetAddressMapping() {
     field_widths["ro"] = LogBase2(rows);
     field_widths["co"] = actual_col_bits;
 
-    std::cout << "ch" << field_widths["ch"] << "\n";
-    std::cout << "ra" << field_widths["ra"] << "\n";
-    std::cout << "bg" << field_widths["bg"] << "\n";
-    std::cout << "ba" << field_widths["ba"] << "\n";
-    std::cout << "ro" << field_widths["ro"] << "\n";
-    std::cout << "co" << field_widths["co"] << "\n";
+    // std::cout << "ch" << field_widths["ch"] << "\n";
+    // std::cout << "ra" << field_widths["ra"] << "\n";
+    // std::cout << "bg" << field_widths["bg"] << "\n";
+    // std::cout << "ba" << field_widths["ba"] << "\n";
+    // std::cout << "ro" << field_widths["ro"] << "\n";
+    // std::cout << "co" << field_widths["co"] << "\n";
 
     if (address_mapping.size() != 12) {
         std::cerr << "Unknown address mapping (6 fields each 2 chars required)"

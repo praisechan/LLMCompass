@@ -7,6 +7,7 @@ from design_space_exploration.dse import template_to_system, read_architecture_t
 from multiprocessing import Process, Lock
 from cost_model.cost_model import calc_compute_chiplet_area_mm2, calc_io_die_area_mm2
 import time, os
+import itertools
 
 
 def run(overall_config):
@@ -14,8 +15,13 @@ def run(overall_config):
     print(f"Current config is {model_type}, {input_seq_length}, {batch_size}, {output_seq_length}\n")
 
     model_config = {
-        "Llama-2-7B": {"d_model":4096, "n_heads":32, "intermediate_dim":11008, "n_layers":32},
-        "OPT-30B": {"d_model":7168, "n_heads":56, "intermediate_dim":28672, "n_layers":48},
+        "Llama-2-7B": {"d_model":4096, "n_heads":32, "intermediate_dim":11008, "n_layers":32},# "n_kv_heads":32,
+        "Llama-2-13B": {"d_model":5120, "n_heads":40, "intermediate_dim":13824, "n_layers":40},# "n_kv_heads":40,
+        "Llama-3.1-8B": {"d_model":4096, "n_heads":32, "intermediate_dim":14336, "n_layers":32},# "n_kv_heads":8,
+        "Qwen-2.5-14B": {"d_model":5120, "n_heads":40, "intermediate_dim":13824, "n_layers":48},# "n_kv_heads":8,
+        "OPT-13B": {"d_model":5120, "n_heads":40, "intermediate_dim":20480, "n_layers":40},# "n_kv_heads":40,
+        "OPT-30B": {"d_model":7168, "n_heads":56, "intermediate_dim":28672, "n_layers":48},# "n_kv_heads":56,
+        "Falcon-3-10B": {"d_model":3072, "n_heads":12, "intermediate_dim":23040, "n_layers":40},# "n_kv_heads":4,
     }
 
     # Get the configuration based on defaulting to default_config
@@ -24,6 +30,7 @@ def run(overall_config):
     # Extract the values from the config
     d_model = model_config["d_model"]
     n_heads = model_config["n_heads"]
+    # n_kv_heads = model_config["n_kv_heads"]
     intermediate_dim = model_config["intermediate_dim"]
     n_layers = model_config["n_layers"]
 
@@ -121,17 +128,23 @@ def run(overall_config):
     #         p.terminate()
     #         p.join()
 
-overall_configs = [
-    # case_name, device_type, model_type, input_seq_length, batch_size, output_seq_length
-    #####Llama 7B#####
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 1, 1), #input 256 / batch 1 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 2, 1), #input 256 / batch 1 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 4, 1), #input 256 / batch 4 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 8, 1), #input 256 / batch 4 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 16, 1), #input 256 / batch 16 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 32, 1), #input 256 / batch 16 / output 1
-    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 64, 1), #input 256 / batch 64 / output 1
-    ]
+# Define the options for each parameter
+case_names = ["inference_LUT"]
+device_types = ["A100"]
+model_types = ["Llama-3.1-8B", "Llama-2-13B", "Falcon-3-10B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
+input_seq_lengths = [8192, 16384, 32768, 65536, 131072, 262144]
+batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+output_seq_lengths = [1]
+
+# Generate all combinations automatically
+overall_configs = list(itertools.product(
+    case_names,
+    device_types, 
+    model_types,
+    input_seq_lengths,
+    batch_sizes,
+    output_seq_lengths
+))
 
 for i in overall_configs:
     run(i)
