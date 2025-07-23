@@ -33,9 +33,17 @@ def run(overall_config):
     ## DSE template to system
     if device_type == "A100":
       arch_specs = read_architecture_template("configs/In-Flash/GA100_40GB.json")
+      compute_mode = "no_QK_AV"
     elif device_type == "H100":
-      arch_specs = read_architecture_template("configs/In-Flash/GB100_80GB.json")
-    
+      arch_specs = read_architecture_template("configs/In-Flash/GH100_80GB.json")
+      compute_mode = "no_QK_AV"
+    elif device_type == "A100_In_Flash":
+      arch_specs = read_architecture_template("configs/In-Flash/GA100_40GB.json")
+      compute_mode = "no_QK_AV_softmax"
+    elif device_type == "H100_In_Flash":
+      arch_specs = read_architecture_template("configs/In-Flash/GH100_80GB.json")
+      compute_mode = "no_QK_AV_softmax"
+      
     device_count = arch_specs["device_count"]
 
     model_init = TransformerBlockInitComputationTP(
@@ -51,6 +59,7 @@ def run(overall_config):
         intermediate_dim=intermediate_dim,
         device_count=device_count,
         data_type=data_type_dict["fp16"],
+        compute_mode=compute_mode
     )
     _ = model_init(
         Tensor([batch_size, input_seq_length, model_init.d_model], data_type_dict["fp16"])

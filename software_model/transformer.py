@@ -359,7 +359,7 @@ class TransformerBlockInitComputationTP(Operator):
 
 class TransformerBlockAutoRegressionTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType):
+    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType, compute_mode: str = "default"):
         super().__init__(0, 0, 0, 0, data_type)
         self.d_model = d_model
         self.n_heads = n_heads
@@ -400,6 +400,9 @@ class TransformerBlockAutoRegressionTP(Operator):
         self.H_matmul2 = Matmul(data_type)
         self.layer_norm1 = LayerNorm(data_type)
         self.allreduce_ffn = AllReduceMultiPCB(data_type)
+        
+        # compute mode for attention
+        self.compute_mode = compute_mode
 
     def __call__(self, x: Tensor, seq_len: int) -> Tensor:
         # b: batch size
@@ -500,14 +503,26 @@ class TransformerBlockAutoRegressionTP(Operator):
             + device.compute_module.overhead.matmul
         )
 
-        matmul_total_latency = (
-            qkv_latency
-            + q_mul_k_latency
-            + a_mul_v_latency
-            + h_matmul0_latency
-            + h1_matmul1_latency
-            + h2_matmul2_latency
-        )
+        if self.compute_mode == "default":
+            matmul_total_latency = (
+                qkv_latency
+                + q_mul_k_latency
+                + a_mul_v_latency
+                + h_matmul0_latency
+                + h1_matmul1_latency
+                + h2_matmul2_latency
+            )
+        elif self.compute_mode == "no_QK_AV" or self.compute_mode == "no_QK_AV_softmax":
+            matmul_total_latency = (
+                qkv_latency
+                + h_matmul0_latency
+                + h1_matmul1_latency
+                + h2_matmul2_latency
+            )
+        else:
+            raise ValueError(
+                f"compute mode {self.compute_mode} not supported for roofline model"
+            )
 
         # normalization
         softmax_latency = (
@@ -519,7 +534,14 @@ class TransformerBlockAutoRegressionTP(Operator):
             + device.compute_module.overhead.layernorm
         )
 
-        normlization_total_latency = softmax_latency + layernorm_latency * 2
+        if self.compute_mode == "default" or self.compute_mode == "no_QK_AV":
+            normlization_total_latency = softmax_latency + layernorm_latency * 2
+        elif self.compute_mode == "no_QK_AV_softmax":
+            normlization_total_latency = layernorm_latency * 2
+        else:
+            raise ValueError(
+                f"compute mode {self.compute_mode} not supported for roofline model"
+            )
 
         # gelu
         gelu_latency = (
