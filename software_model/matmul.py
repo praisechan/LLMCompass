@@ -126,7 +126,10 @@ class Matmul(Operator):
         self.input2_shape = None
         self.output_shape = None
         self.look_up_table = None
+        self.dram_look_up_table = None
         self.best_mapping = None
+
+        self.mem_name = os.getenv("mem_name")
 
     def __call__(self, input1: Tensor, input2: Tensor) -> Tensor:
         # [bs, M, K] * [K, N] = [bs, M, N]
@@ -745,6 +748,22 @@ class Matmul(Operator):
         mapping: Mapping,
         pcb_module: Device,
     ) -> int:
+        if self.dram_look_up_table is None:
+            # Check if the CSV file exists
+            filepath = f"./dram_sim_model/{self.mem_name}/look_up_table.csv"
+            if not os.path.exists(filepath):
+                # Ensure the directory exists (creates if necessary)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                
+                # Create an empty DataFrame with the intended columns
+                # (Adjust these columns as needed)
+                df_empty = pd.DataFrame(columns=["M", "N", "word_size", "Size", "Latency"])
+                
+                # Save the empty DataFrame to CSV
+                df_empty.to_csv(filepath, index=False)
+                print(f"Created new file at {filepath}")
+            self.dram_look_up_table = pd.read_csv(filepath, header=0)
+
         if self.look_up_table is None:
             self.look_up_table = pd.read_csv(
                 f"./systolic_array_model/look_up_table_{pcb_module.compute_module.core.systolic_array.array_height}_{pcb_module.compute_module.core.systolic_array.array_width}.csv",
@@ -821,6 +840,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name                
             )
         if M_remain != 0:
             l2_tiles[-1, :N_l2_t, :K_l2_t] = self.L2TileSimulator(
@@ -831,6 +852,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if N_remain != 0:
             l2_tiles[:M_l2_t, -1, :K_l2_t] = self.L2TileSimulator(
@@ -841,6 +864,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if K_remain != 0:
             l2_tiles[:M_l2_t, :N_l2_t, -1] = self.L2TileSimulator(
@@ -851,6 +876,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if M_remain * N_remain != 0:
             l2_tiles[-1, -1, :K_l2_t] = self.L2TileSimulator(
@@ -861,6 +888,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if M_remain * K_remain != 0:
             l2_tiles[-1, :N_l2_t, -1] = self.L2TileSimulator(
@@ -871,6 +900,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if N_remain * K_remain != 0:
             l2_tiles[:M_l2_t, -1, -1] = self.L2TileSimulator(
@@ -881,6 +912,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
         if M_remain * N_remain * K_remain != 0:
             l2_tiles[-1, -1, -1] = self.L2TileSimulator(
@@ -891,6 +924,8 @@ class Matmul(Operator):
                 mapping,
                 pcb_module,
                 self.look_up_table,
+                self.dram_look_up_table,
+                self.mem_name
             )
 
         total_cycle_count = 0
@@ -979,7 +1014,11 @@ class Matmul(Operator):
             mapping: "Matmul.Mapping",
             pcb_module: Device,
             look_up_table: pd.DataFrame,
+            dram_look_up_table: pd.DataFrame,
+            mem_name: str,
         ):
+            self.mem_name = mem_name
+
             # print(f'L2 tile: {M} {N} {K}')
             self.M = M
             self.N = N
@@ -994,30 +1033,135 @@ class Matmul(Operator):
             )
             self.K_reduction_io_count = 2 * M * N * data_type.word_size
             self.M_K_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                M, K, data_type, pcb_module
+                M, K, data_type, pcb_module, dram_look_up_table
             )
             self.K_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                K, N, data_type, pcb_module
+                K, N, data_type, pcb_module, dram_look_up_table
             )
             self.M_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                M, N, data_type, pcb_module
+                M, N, data_type, pcb_module, dram_look_up_table
             )
             self.compute_cycle_count = self.simulate_l2_tile_compute_cycle_count(
                 M, N, K, data_type, mapping, pcb_module, look_up_table
             )
+            
+        def write_lut(self, M:int, N:int, word_size, dram_look_up_table : pd.DataFrame):
+            df = dram_look_up_table
+            ##################################################################################
+            # Check if the combination already exists
+            mask = (df["M"] == M) & (df["N"] == N) & (df["word_size"] == word_size) 
+            #if (df["Size"] == size).any():
+            if mask.any():
+                final_latency = df.loc[mask, "Latency"].values[0]
+                pass
+            else:
+                print(os.getcwd())                
+                size = None
+                num_bank = None
+                num_ch = None
+                mem_type = None
+                
+                if self.mem_name == "DDR4":
+                  config_file = "./DRAMsim3/configs/DDR4_8Gb_x16_3200_custom.ini"
+                elif self.mem_name == "LPDDR4":
+                  size = int(M * N * word_size / 128) #divide by 128 Byte
+                  num_bank = 8
+                  num_ch = 4
+                  mem_type = "LPDDR4"    
+                  config_file = "./DRAMsim3/configs/LPDDR4_8Gb_x16_2400_4ch.ini"
+                elif self.mem_name == "SOM_LPDDR4":
+                  size = int(M * N * word_size / 128) #divide by 128 Byte
+                  num_bank = 8
+                  num_ch = 4
+                  mem_type = "LPDDR4"    
+                  config_file = "./DRAMsim3/configs/SOM_LPDDR4_8Gb_x16_2400_4ch.ini"
+                elif self.mem_name == "HBM2":
+                  size = int(M * N * word_size / 64) #divide by 64 Byte
+                  num_bank = 16
+                  num_ch = 40
+                  mem_type = "HBM2"
+                  config_file = "./DRAMsim3/configs/HBM2_8Gb_x128_40ch.ini"
+                  # config_file = "./DRAMsim3/configs/HBM2_8Gb_x128_32ch.ini"
+                elif self.mem_name == "SOM_HBM2":
+                  size = int(M * N * word_size / 64) #divide by 64 Byte
+                  num_bank = 16
+                  num_ch = 40
+                  mem_type = "HBM2"
+                  config_file = "./DRAMsim3/configs/SOM_HBM2_8Gb_x128_40ch.ini"
+                else:
+                    raise ValueError("Wrong memory name!")
 
+                #generate trace file
+                stream_type = "c"
+                trace_output_dir = f"./dram_sim_model/{self.mem_name}/trace"
+                command = f"python ./DRAMsim3/tests/trace_gen_SOM.py -s={stream_type} -o={trace_output_dir} --num-bank={num_bank} -n={size} --num-ch={num_ch} --mem-type={mem_type}"
+                os.system(command)
+
+                #run dramsim3
+                trace_file = f"./{trace_output_dir}/dramsim3_readonly_mult_ch_stream_i0_n{size}_rw2.trace"
+                output_dir = f"./dram_sim_model/{self.mem_name}/sim_output"
+                
+                output_file = f"num_req_{size}"
+                command = f"./DRAMsim3/build/dramsim3main {config_file} -o {output_dir} -f {output_file} -t {trace_file} -c 1000000"
+                os.system(command)
+
+                #open json file
+                import json
+                json_file_name = output_dir + '/' + output_file +".json"
+                with open(json_file_name, 'r') as file:
+                      data = json.load(file)
+
+                final_latency = 0
+                max_cycle = 0
+
+                # find max latency among multiple channels
+                for channel, channel_data in data.items():
+                    latency = channel_data.get("trans_finish_time") #latency in nanosecond(ns)
+                    cycle = channel_data.get("trans_finish_cycle")
+                    if latency > final_latency:
+                        final_latency = latency
+                        max_cycle = cycle
+                    
+                # # re-run dramsim3 for power estimation
+                # command = f"./DRAMsim3/build/dramsim3main {config_file} -o {output_dir} -f {output_file} -t {trace_file} -c {max_cycle}"
+                # os.system(command)
+
+                # with open(json_file_name, 'r') as file:
+                #     data = json.load(file)
+                
+                # total_energy = 0
+                # for channel, channel_data in data.items():
+                #     total_energy += channel_data.get("total_energy") # energy in pJ
+
+                # If the combination doesn't exist, append it directly to the CSV in append mode
+                new_row = pd.DataFrame({"M": [M], "N": [N], "word_size": [word_size] ,"Size": [size], "Latency":[final_latency]})
+                new_row.to_csv(f"./dram_sim_model/{self.mem_name}/look_up_table.csv", mode='a', index=False, header=False)
+                
+                new_index = len(dram_look_up_table)
+                dram_look_up_table.loc[new_index] = new_row.iloc[0]
+            return final_latency
+
+        ## l2_io cycle_count relies on M, N dimensions
         def simulate_l2_tile_io_cycle_count(
-            self, M: int, N: int, data_type: DataType, chiplet_module: Device
+            self, M: int, N: int, data_type: DataType, chiplet_module: Device, dram_look_up_table: pd.DataFrame
         ):
-            return ceil(
-                M
-                * N
-                * data_type.word_size
-                / (
-                    chiplet_module.io_module.bandwidth
-                    / chiplet_module.compute_module.clock_freq
-                )
-            )
+            io_latency = self.write_lut(M=M, N=N, word_size=data_type.word_size, dram_look_up_table=dram_look_up_table)
+            
+            # convert latency(nanosecond) to cycle
+            freq_in_GHz = chiplet_module.compute_module.clock_freq / 10**9
+            io_cycle = io_latency / freq_in_GHz
+
+            return io_cycle, ceil(M * N * data_type.word_size)
+                        
+            # return ceil(
+            #     M
+            #     * N
+            #     * data_type.word_size
+            #     / (
+            #         chiplet_module.io_module.bandwidth
+            #         / chiplet_module.compute_module.clock_freq
+            #     )
+            # )
 
         def simulate_l2_tile_compute_cycle_count(
             self,
