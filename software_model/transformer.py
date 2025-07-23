@@ -18,10 +18,13 @@ from hardware_model.system import System
 
 
 class TransformerBlockInitComputationTP(Operator):
-    def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-        super().__init__(0, 0, 0, 0, data_type)
+    #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
+    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType):
+        super().__init__(0, 0, 0, 0, data_type, None)
+        
         self.d_model = d_model
         self.n_heads = n_heads
+        self.intermediate_dim = intermediate_dim
         self.device_count = device_count
         # parameters per device
         d = d_model
@@ -29,8 +32,10 @@ class TransformerBlockInitComputationTP(Operator):
         self.Wk = Tensor([d, d // device_count], data_type)
         self.Wv = Tensor([d, d // device_count], data_type)
         self.W0 = Tensor([d // device_count, d], data_type)
-        self.W1 = Tensor([d, 4 * d // device_count], data_type)
-        self.W2 = Tensor([4 * d // device_count, d], data_type)
+        self.W1 = Tensor([d, intermediate_dim // device_count], data_type)
+        self.W2 = Tensor([intermediate_dim // device_count, d], data_type)
+        # self.W1 = Tensor([d, 4 * d // device_count], data_type)
+        # self.W2 = Tensor([4 * d // device_count, d], data_type)
         # operators per device
         # # multi-head attention
         self.Q_proj = Matmul(data_type)
@@ -100,7 +105,7 @@ class TransformerBlockInitComputationTP(Operator):
 
         # feed-forward network
         H1 = self.H_matmul1(H0, self.W1)  # [b, s, 4 * d / dev_cnt]
-        assert H1.shape == [b, s, 4 * d // dev_cnt]
+        assert H1.shape == [b, s, self.intermediate_dim // dev_cnt]
         H1 = self.H_gelu(H1)
         H2 = self.H_matmul2(H1, self.W2)  #  [b, s, d]
         assert H2.shape == [b, s, d]
@@ -353,10 +358,12 @@ class TransformerBlockInitComputationTP(Operator):
 
 
 class TransformerBlockAutoRegressionTP(Operator):
-    def __init__(self, d_model, n_heads, device_count, data_type: DataType):
+    #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
+    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType):
         super().__init__(0, 0, 0, 0, data_type)
         self.d_model = d_model
         self.n_heads = n_heads
+        self.intermediate_dim = intermediate_dim
         self.device_count = device_count
         # parameters per device
         d = d_model
@@ -364,8 +371,8 @@ class TransformerBlockAutoRegressionTP(Operator):
         self.Wk = Tensor([d, d // device_count], data_type)
         self.Wv = Tensor([d, d // device_count], data_type)
         self.W0 = Tensor([d // device_count, d], data_type)
-        self.W1 = Tensor([d, 4 * d // device_count], data_type)
-        self.W2 = Tensor([4 * d // device_count, d], data_type)
+        self.W1 = Tensor([d, self.intermediate_dim // device_count], data_type)
+        self.W2 = Tensor([self.intermediate_dim // device_count, d], data_type)
         # operators per device
         # # multi-head attention
         self.Q_proj = Matmul(data_type)
@@ -446,7 +453,7 @@ class TransformerBlockAutoRegressionTP(Operator):
 
         # feed-forward network
         h1 = self.H_matmul1(h0, self.W1)  # [b, 1, 4 * d / dev_cnt]
-        assert h1.shape == [b, 1, 4 * d // dev_cnt]
+        assert h1.shape == [b, 1, self.intermediate_dim // dev_cnt]
         h1 = self.H_gelu(h1)
         h2 = self.H_matmul2(h1, self.W2)  #  [b, 1, d]
         assert h2.shape == [b, 1, d]
