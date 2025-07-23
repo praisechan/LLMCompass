@@ -48,6 +48,7 @@ template <typename Out>
 void StringSplit(const std::string& s, char delim, Out result);
 
 int LogBase2(int power_of_two);
+int LogBase2_ceil(int power_of_two);
 void AbruptExit(const std::string& file, int line);
 bool DirExist(std::string dir);
 

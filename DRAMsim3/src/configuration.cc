@@ -410,7 +410,8 @@ void Config::SetAddressMapping() {
 
     // has to strictly follow the order of chan, rank, bg, bank, row, col
     std::map<std::string, int> field_widths;
-    field_widths["ch"] = LogBase2(channels);
+    // field_widths["ch"] = LogBase2(channels);
+    field_widths["ch"] = LogBase2_ceil(channels); //HBM has 40 channel, which should be 6 bits
     field_widths["ra"] = LogBase2(ranks);
     field_widths["bg"] = LogBase2(bankgroups);
     field_widths["ba"] = LogBase2(banks_per_group);

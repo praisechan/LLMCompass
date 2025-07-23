@@ -1061,40 +1061,31 @@ class Matmul(Operator):
                 num_ch = None
                 mem_type = None
                 
-                if self.mem_name == "DDR4":
-                  config_file = "./DRAMsim3/configs/DDR4_8Gb_x16_3200_custom.ini"
-                elif self.mem_name == "LPDDR4":
-                  size = int(M * N * word_size / 128) #divide by 128 Byte
-                  num_bank = 8
-                  num_ch = 4
-                  mem_type = "LPDDR4"    
-                  config_file = "./DRAMsim3/configs/LPDDR4_8Gb_x16_2400_4ch.ini"
-                elif self.mem_name == "SOM_LPDDR4":
-                  size = int(M * N * word_size / 128) #divide by 128 Byte
-                  num_bank = 8
-                  num_ch = 4
-                  mem_type = "LPDDR4"    
-                  config_file = "./DRAMsim3/configs/SOM_LPDDR4_8Gb_x16_2400_4ch.ini"
-                elif self.mem_name == "HBM2":
+                # if self.mem_name == "LPDDR4":
+                #   size = int(M * N * word_size / 128) #divide by 128 Byte
+                #   num_bank = 8
+                #   num_ch = 4
+                #   mem_type = "LPDDR4"    
+                #   config_file = "./DRAMsim3/configs/LPDDR4_8Gb_x16_2400_4ch.ini"
+                if self.mem_name == "HBM2":
                   size = int(M * N * word_size / 64) #divide by 64 Byte
                   num_bank = 16
                   num_ch = 40
                   mem_type = "HBM2"
                   config_file = "./DRAMsim3/configs/HBM2_8Gb_x128_40ch.ini"
-                  # config_file = "./DRAMsim3/configs/HBM2_8Gb_x128_32ch.ini"
-                elif self.mem_name == "SOM_HBM2":
+                elif self.mem_name == "HBM3":
                   size = int(M * N * word_size / 64) #divide by 64 Byte
                   num_bank = 16
                   num_ch = 40
-                  mem_type = "HBM2"
-                  config_file = "./DRAMsim3/configs/SOM_HBM2_8Gb_x128_40ch.ini"
+                  mem_type = "HBM3"
+                  config_file = "./DRAMsim3/configs/HBM3_8Gb_x128_40ch.ini"
                 else:
                     raise ValueError("Wrong memory name!")
 
                 #generate trace file
                 stream_type = "c"
                 trace_output_dir = f"./dram_sim_model/{self.mem_name}/trace"
-                command = f"python ./DRAMsim3/tests/trace_gen_SOM.py -s={stream_type} -o={trace_output_dir} --num-bank={num_bank} -n={size} --num-ch={num_ch} --mem-type={mem_type}"
+                command = f"python ./DRAMsim3/tests/trace_gen_LLMcompass.py -s={stream_type} -o={trace_output_dir} --num-bank={num_bank} -n={size} --num-ch={num_ch} --mem-type={mem_type}"
                 os.system(command)
 
                 #run dramsim3

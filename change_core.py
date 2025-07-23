@@ -10,11 +10,8 @@ import time, os
 
 
 def run(overall_config):
-    run_name, device_type, mem_name, model_type, input_seq_length, batch_size, output_seq_length = overall_config
-        
-    print(f"Current config is {mem_name}, {model_type}\n")
-    print(f"{input_seq_length}, {batch_size}, {output_seq_length}\n")
-    os.environ['mem_name'] = mem_name    
+    run_name, device_type, model_type, input_seq_length, batch_size, output_seq_length = overall_config
+    print(f"Current config is {model_type}, {input_seq_length}, {batch_size}, {output_seq_length}\n")
 
     model_config = {
         "Llama-2-7B": {"d_model":4096, "n_heads":32, "intermediate_dim":11008, "n_layers":32},
@@ -45,6 +42,8 @@ def run(overall_config):
       compute_mode = "no_QK_AV_softmax"
       
     device_count = arch_specs["device_count"]
+    mem_name = arch_specs["device"]["memory_protocol"]
+    os.environ['mem_name'] = mem_name    
 
     model_init = TransformerBlockInitComputationTP(
         d_model=d_model,
@@ -96,7 +95,7 @@ def run(overall_config):
                 )
 
     lock = Lock()
-    simul_name = f"{mem_name}_{batch_size}_{input_seq_length}_{output_seq_length}"
+    simul_name = f"Batch{batch_size}_Input{input_seq_length}_Output{output_seq_length}"
     test_core(simul_name, lock)
 
     # lock = Lock()
@@ -123,12 +122,15 @@ def run(overall_config):
     #         p.join()
 
 overall_configs = [
-    # case_name, device_type, mem_name, model_type, input_seq_length, batch_size, output_seq_length
+    # case_name, device_type, model_type, input_seq_length, batch_size, output_seq_length
     #####Llama 7B#####
-    ("SOM_Llama-2-7B", "server", "HBM2", "Llama-2-7B", 256, 1, 1), #input 256 / batch 1 / output 1
-    ("SOM_Llama-2-7B", "server", "HBM2", "Llama-2-7B", 256, 4, 1), #input 256 / batch 4 / output 1
-    ("SOM_Llama-2-7B", "server", "HBM2", "Llama-2-7B", 256, 16, 1), #input 256 / batch 16 / output 1
-    ("SOM_Llama-2-7B", "server", "HBM2", "Llama-2-7B", 256, 64, 1), #input 256 / batch 64 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 1, 1), #input 256 / batch 1 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 2, 1), #input 256 / batch 1 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 4, 1), #input 256 / batch 4 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 8, 1), #input 256 / batch 4 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 16, 1), #input 256 / batch 16 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 32, 1), #input 256 / batch 16 / output 1
+    ("SOM_Llama-2-7B", "A100", "Llama-2-7B", 256, 64, 1), #input 256 / batch 64 / output 1
     ]
 
 for i in overall_configs:

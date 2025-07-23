@@ -47,6 +47,16 @@ int GetBitInPos(uint64_t bits, int pos) {
     return (bits >> pos) & 1;
 }
 
+int LogBase2_ceil(int power_of_two) {
+    int i = 0;
+    int p = 1;
+    while (p < power_of_two) {
+        p <<= 1;  // p *= 2
+        i++;
+    }
+    return i;
+}
+
 int LogBase2(int power_of_two) {
     int i = 0;
     while (power_of_two > 1) {
