@@ -8,6 +8,7 @@ from software_model.matmul import Matmul, BatchedMatmul
 from software_model.softmax import Softmax
 from software_model.layernorm import LayerNorm
 from software_model.gelu import GeLU
+from software_model.flash_attention import FlashAttention
 
 
 from software_model.utils import Tensor, DataType
@@ -19,13 +20,15 @@ from hardware_model.system import System
 
 class TransformerBlockInitComputationTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType):
+    def __init__(self, d_model, n_heads, intermediate_dim, device_count, data_type: DataType, use_flash_attention: bool = True):
         super().__init__(0, 0, 0, 0, data_type, None)
         
         self.d_model = d_model
         self.n_heads = n_heads
         self.intermediate_dim = intermediate_dim
         self.device_count = device_count
+        self.use_flash_attention = use_flash_attention
+        
         # parameters per device
         d = d_model
         self.Wq = Tensor([d, d // device_count], data_type)
@@ -47,9 +50,13 @@ class TransformerBlockInitComputationTP(Operator):
         self.Q_transpose = Transpose(data_type)
         self.K_transpose = Transpose(data_type)
         self.V_transpose = Transpose(data_type)
-        self.Q_mul_K = BatchedMatmul(data_type)
-        self.A_softmax = Softmax(data_type)
-        self.A_mul_V = BatchedMatmul(data_type)
+        if use_flash_attention:
+            self.flash_attention = FlashAttention(data_type)
+        else:
+            # Keep existing attention operators
+            self.Q_mul_K = BatchedMatmul(data_type)
+            self.A_softmax = Softmax(data_type)
+            self.A_mul_V = BatchedMatmul(data_type)
         self.H_transpose = Transpose(data_type)
         self.H_reshape = Reshape(data_type)
         self.H_matmul0 = Matmul(data_type)
@@ -72,7 +79,7 @@ class TransformerBlockInitComputationTP(Operator):
         h = self.n_heads
         dev_cnt = self.device_count
         d_h = d // h
-
+        
         # multi-head attention
         Q = self.Q_proj(X, self.Wq)  # [b, s, d / dev_cnt]
         assert Q.shape == [b, s, d // dev_cnt]
@@ -87,10 +94,15 @@ class TransformerBlockInitComputationTP(Operator):
         assert K_T.shape == [b, h // dev_cnt, d_h, s]
         V_T = self.V_transpose(V, [0, 2, 1, 3])  # [b, h / dev_cnt, s, d_h]
         assert V_T.shape == [b, h // dev_cnt, s, d_h]
-        A = self.Q_mul_K(Q_T, K_T)  # [b, h / dev_cnt, s, s]
-        assert A.shape == [b, h // dev_cnt, s, s]
-        A_prob = self.A_softmax(A)
-        H = self.A_mul_V(A_prob, V_T)  #  [b, h / dev_cnt, s, d_h]
+        if self.use_flash_attention:
+            # Use FlashAttention instead of separate Q×K and A×V
+            H = self.flash_attention(Q_T, K_T, V_T)  # [b, h / dev_cnt, s, d_h]
+        else:
+            # Original attention computation
+            A = self.Q_mul_K(Q_T, K_T)  # [b, h / dev_cnt, s, s]
+            assert A.shape == [b, h // dev_cnt, s, s]
+            A_prob = self.A_softmax(A)
+            H = self.A_mul_V(A_prob, V_T)  #  [b, h / dev_cnt, s, d_h]
         assert H.shape == [b, h // dev_cnt, s, d_h]
         H = self.H_transpose(H, [0, 2, 1, 3])  #  [b, s, h / dev_cnt, d_h]
         assert H.shape == [b, s, h // dev_cnt, d_h]
@@ -123,12 +135,25 @@ class TransformerBlockInitComputationTP(Operator):
         qkv_latency = 3 * (
             self.Q_proj.roofline_model(device) + device.compute_module.overhead.matmul
         )
-        q_mul_k_latency = (
-            self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        a_mul_v_latency = (
-            self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
-        )
+        if self.use_flash_attention:
+            # Use FlashAttention instead of separate Q×K and A×V
+            attention_latency = (
+                self.flash_attention.roofline_model(device)
+                + device.compute_module.overhead.softmax  # Flash attention includes softmax
+            )
+        else:
+            # Original attention computation
+            q_mul_k_latency = (
+                self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
+            )
+            a_mul_v_latency = (
+                self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
+            )
+            softmax_latency = (
+                self.A_softmax.roofline_model(device)
+                + device.compute_module.overhead.softmax
+            )
+            
         h_matmul0_latency = (
             self.H_matmul0.roofline_model(device)
             + device.compute_module.overhead.matmul
@@ -142,26 +167,22 @@ class TransformerBlockInitComputationTP(Operator):
             + device.compute_module.overhead.matmul
         )
 
-        matmul_total_latency = (
-            qkv_latency
-            + q_mul_k_latency
-            + a_mul_v_latency
-            + h_matmul0_latency
-            + h1_matmul1_latency
-            + h2_matmul2_latency
-        )
-
         # normalization
-        softmax_latency = (
-            self.A_softmax.roofline_model(device)
-            + device.compute_module.overhead.softmax
-        )
         layernorm_latency = (
             self.layer_norm0.roofline_model(device)
             + device.compute_module.overhead.layernorm
         )
-
-        normlization_total_latency = softmax_latency + layernorm_latency * 2
+                
+        if self.use_flash_attention:
+            matmul_total_latency = qkv_latency + attention_latency + h_matmul0_latency + h1_matmul1_latency + h2_matmul2_latency
+            normlization_total_latency = layernorm_latency * 2  # No separate softmax
+        else:
+            # Original computation
+            matmul_total_latency = (
+                qkv_latency + q_mul_k_latency + a_mul_v_latency + 
+                h_matmul0_latency + h1_matmul1_latency + h2_matmul2_latency
+            )
+            normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
         gelu_latency = (
@@ -173,7 +194,7 @@ class TransformerBlockInitComputationTP(Operator):
             allreduce_latency = self.allreduce_mha.simulate(interconnect)
             allreduce_total_latency = allreduce_latency * 2
         else:
-            allreduce_total_latency = 0
+            allreduce_latency = 0
             allreduce_total_latency = 0
 
         # others
@@ -206,16 +227,31 @@ class TransformerBlockInitComputationTP(Operator):
             self.Q_proj.compile_and_simulate(device, compile_mode)
             + device.compute_module.overhead.matmul
         )
-        print("simulating q_mul_k")
-        q_mul_k_latency = (
-            self.Q_mul_K.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
-        )
-        print("simulating a_mul_v")
-        a_mul_v_latency = (
-            self.A_mul_V.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
-        )
+        
+        if self.use_flash_attention:
+            print("simulating flash attention")
+            attention_latency = (
+                self.flash_attention.compile_and_simulate(device, compile_mode)
+                + device.compute_module.overhead.softmax  # Flash attention includes softmax
+            )
+        else:
+            print("simulating q_mul_k")
+            q_mul_k_latency = (
+                self.Q_mul_K.compile_and_simulate(device, compile_mode)
+                + device.compute_module.overhead.matmul
+            )
+            print("simulating a_mul_v")
+            a_mul_v_latency = (
+                self.A_mul_V.compile_and_simulate(device, compile_mode)
+                + device.compute_module.overhead.matmul
+            )
+            print("simulating softmax")
+            softmax_latency = (
+                self.A_softmax.compile_and_simulate(device, compile_mode)
+                + device.compute_module.overhead.softmax
+            )
+            attention_latency = q_mul_k_latency + a_mul_v_latency + softmax_latency
+        
         print("simulating h_matmul0")
         h_matmul0_latency = (
             self.H_matmul0.compile_and_simulate(device, compile_mode)
@@ -233,26 +269,22 @@ class TransformerBlockInitComputationTP(Operator):
         )
         print("finish matmul simulation")
 
-        matmul_total_latency = (
-            qkv_latency
-            + q_mul_k_latency
-            + a_mul_v_latency
-            + h_matmul0_latency
-            + h1_matmul1_latency
-            + h2_matmul2_latency
-        )
-
         # normalization
-        softmax_latency = (
-            self.A_softmax.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.softmax
-        )
         layernorm_latency = (
             self.layer_norm0.compile_and_simulate(device, compile_mode)
             + device.compute_module.overhead.layernorm
         )
 
-        normlization_total_latency = softmax_latency + layernorm_latency * 2
+        if self.use_flash_attention:
+            matmul_total_latency = qkv_latency + attention_latency + h_matmul0_latency + h1_matmul1_latency + h2_matmul2_latency
+            normlization_total_latency = layernorm_latency * 2  # No separate softmax
+        else:
+            # Original computation
+            matmul_total_latency = (
+                qkv_latency + q_mul_k_latency + a_mul_v_latency + 
+                h_matmul0_latency + h1_matmul1_latency + h2_matmul2_latency
+            )
+            normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
         gelu_latency = (
@@ -613,14 +645,26 @@ class TransformerBlockAutoRegressionTP(Operator):
             + pcb.compute_module.overhead.matmul
         )
 
-        matmul_total_latency = (
-            qkv_latency
-            + q_mul_k_latency
-            + a_mul_v_latency
-            + h_matmul0_latency
-            + h1_matmul1_latency
-            + h2_matmul2_latency
-        )
+        if self.compute_mode == "default":
+            matmul_total_latency = (
+                qkv_latency
+                + q_mul_k_latency
+                + a_mul_v_latency
+                + h_matmul0_latency
+                + h1_matmul1_latency
+                + h2_matmul2_latency
+            )
+        elif self.compute_mode == "no_QK_AV" or self.compute_mode == "no_QK_AV_softmax":
+            matmul_total_latency = (
+                qkv_latency
+                + h_matmul0_latency
+                + h1_matmul1_latency
+                + h2_matmul2_latency
+            )
+        else:
+            raise ValueError(
+                f"compute mode {self.compute_mode} not supported for roofline model"
+            )
 
         # normalization
         softmax_latency = (
@@ -632,7 +676,14 @@ class TransformerBlockAutoRegressionTP(Operator):
             + pcb.compute_module.overhead.layernorm
         )
 
-        normlization_total_latency = softmax_latency + layernorm_latency * 2
+        if self.compute_mode == "default" or self.compute_mode == "no_QK_AV":
+            normlization_total_latency = softmax_latency + layernorm_latency * 2
+        elif self.compute_mode == "no_QK_AV_softmax":
+            normlization_total_latency = layernorm_latency * 2
+        else:
+            raise ValueError(
+                f"compute mode {self.compute_mode} not supported for roofline model"
+            )
 
         # gelu
         gelu_latency = (
