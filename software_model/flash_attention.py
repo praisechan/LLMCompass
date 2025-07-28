@@ -12,7 +12,7 @@ import pandas as pd
 import os
 from scalesim.scale_sim import scalesim
 import copy
-
+from tqdm import tqdm
 
 class FlashAttention(Operator):
     def __init__(self, data_type: DataType):
@@ -61,6 +61,19 @@ class FlashAttention(Operator):
         
         return output
 
+    @staticmethod
+    def find_permutations(n):
+        permutations = set()
+
+        for i in range(1, n + 1):
+            if n % i == 0:
+                for j in range(1, n + 1):
+                    if (n // i) % j == 0:
+                        k = n // (i * j)
+                        permutations.add((i, j, k))
+
+        return list(permutations)
+
     def compile_and_simulate(self, pcb_module: Device, compile_mode: str = "heuristic-GPU"):
         if compile_mode != "heuristic-GPU":
             raise ValueError("FlashAttention only supports heuristic-GPU compile mode")
@@ -102,51 +115,67 @@ class FlashAttention(Operator):
         min_cycle_count = 2**63 - 1
         best_mapping = None
         
-        b = self.computational_graph.batch_size
-        h = self.computational_graph.num_heads
-        s = self.computational_graph.seq_len
+        # b = self.computational_graph.batch_size
+        # h = self.computational_graph.num_heads
+        # s = self.computational_graph.seq_len
         d_h = self.computational_graph.head_dim
         
         # Flash attention block sizes
-        for block_size_r in [32, 64, 128, 256]:  # row block size (Br)
-            for block_size_c in [32, 64, 128, 256]:  # column block size (Bc)
+        for block_size_r in tqdm([32, 64, 128, 256, 512, 1024, 2048]):  # row block size (Br)
+            for block_size_c in [32, 64, 128, 256, 512, 1024, 2048]:  # column block size (Bc)
                 # Check if blocks fit in SRAM
                 # Need space for: Qi (Br x d_h), Kj (Bc x d_h), Vj (Bc x d_h), 
                 # Sij (Br x Bc), and output accumulator Oi (Br x d_h)
-                sram_requirement = (
+                working_set_size = (
                     block_size_r * d_h +  # Qi
                     block_size_c * d_h +  # Kj  
                     block_size_c * d_h +  # Vj
                     block_size_r * block_size_c +  # Sij
                     block_size_r * d_h    # Oi accumulator
                 ) * self.data_type.word_size
-                
-                if sram_requirement > pcb_module.compute_module.core.SRAM_size // 2:
+        
+                if (
+                    working_set_size
+                    > pcb_module.compute_module.l2_size
+                    // self.data_type.word_size
+                ):
                     continue
-                    
+
                 for l1_tile_size in [32, 64, 128, 256]:
                     if l1_tile_size > min(block_size_r, block_size_c, d_h):
                         continue
+                    
+                    # Add L0 tiling factor exploration like in Matmul
+                    for (
+                        l0_M_tiling_factor,
+                        l0_N_tiling_factor,
+                        l0_K_tiling_factor,
+                    ) in self.find_permutations(
+                        pcb_module.compute_module.core.systolic_array_count
+                    ):
+                        mapping = self.Mapping(
+                            block_size_r=block_size_r,
+                            block_size_c=block_size_c,
+                            l1_tile_size=l1_tile_size,
+                            l0_M_tiling_factor=l0_M_tiling_factor,
+                            l0_N_tiling_factor=l0_N_tiling_factor,
+                            l0_K_tiling_factor=l0_K_tiling_factor
+                        )
                         
-                    mapping = self.Mapping(
-                        block_size_r=block_size_r,
-                        block_size_c=block_size_c,
-                        l1_tile_size=l1_tile_size
-                    )
-                    
-                    cycle_count = self.simulate(
-                        self.computational_graph,
-                        mapping,
-                        pcb_module,
-                    )
-                    
-                    if cycle_count < min_cycle_count:
-                        min_cycle_count = cycle_count
-                        best_mapping = mapping
+                        cycle_count = self.simulate(
+                            self.computational_graph,
+                            mapping,
+                            pcb_module,
+                        )
+                        
+                        if cycle_count < min_cycle_count:
+                            min_cycle_count = cycle_count
+                            best_mapping = mapping
         
         self.best_mapping = best_mapping
         self.best_cycle_count = min_cycle_count
-        self.best_latency = min_cycle_count / pcb_module.compute_module.clock_freq
+        
+        self.best_latency = self.best_cycle_count / pcb_module.compute_module.clock_freq
         self.latency = self.best_latency
         
         return self.latency
@@ -168,16 +197,13 @@ class FlashAttention(Operator):
         # Number of blocks
         Tr = ceil(s / Br)  # number of row blocks
         Tc = ceil(s / Bc)  # number of column blocks
-        
+                
         total_cycle_count = 0
-        
-        # For each batch and head (can be parallelized)
-        parallelism = min(b * h, pcb_module.compute_module.core_count)
         
         # Use L2TileSimulator for GEMM operations within flash attention blocks
         from software_model.matmul import Matmul
         
-        # Create temporary mapping for L2TileSimulator
+        # Create temporary mapping for L2TileSimulator using the L0 tiling factors
         temp_mapping = Matmul.Mapping(
             l2_tile_M=Br,
             l2_tile_N=Bc,
@@ -188,73 +214,129 @@ class FlashAttention(Operator):
             l1_tile_K=mapping.l1_tile_size,
             l2_loop_order="knm",
             l1_loop_order="knm",
-            l0_M_tiling_factor=1,
-            l0_N_tiling_factor=1,
-            l0_K_tiling_factor=1
+            l0_M_tiling_factor=mapping.l0_M_tiling_factor,
+            l0_N_tiling_factor=mapping.l0_N_tiling_factor,
+            l0_K_tiling_factor=mapping.l0_K_tiling_factor
         )
+        
+        # Pre-compute common L2TileSimulator results to avoid repeated computation
+        # Most blocks will have the same size (Br x Bc x d_h), only edge blocks differ
+        qk_tile_standard = Matmul.L2TileSimulator(
+            Br, Bc, d_h, computational_graph.data_type,
+            temp_mapping, pcb_module, self.look_up_table, 
+            self.dram_look_up_table, self.mem_name
+        )
+        av_tile_standard = Matmul.L2TileSimulator(
+            Br, d_h, Bc, computational_graph.data_type,
+            temp_mapping, pcb_module, self.look_up_table,
+            self.dram_look_up_table, self.mem_name
+        )
+        
+        # Pre-compute IO cycles for standard block sizes
+        qi_load_cycles_standard = self.simulate_flash_attention_io_cycle_count(
+            Br, d_h, computational_graph.data_type, pcb_module
+        )
+        kj_load_cycles_standard = self.simulate_flash_attention_io_cycle_count(
+            Bc, d_h, computational_graph.data_type, pcb_module
+        )
+        oi_store_cycles_standard = qi_load_cycles_standard  # Same as qi_load
+        
+        # Pre-compute softmax cycles for standard block size
+        softmax_cycles_standard = ceil(
+            Br * Bc * 4 / pcb_module.compute_module.total_vector_flops_per_cycle
+        )
+        
+        # Pre-compute init cycles for standard block size
+        init_cycles_standard = ceil(Br * d_h / pcb_module.compute_module.total_vector_flops_per_cycle)
         
         # For each row block i
         for i in range(Tr):
             actual_Br = min(Br, s - i * Br)
             
-            # Initialize Oi, mi, li (minimal cost)
-            init_cycles = ceil(actual_Br * d_h / pcb_module.compute_module.total_vector_flops_per_cycle)
-            
-            # Load Qi from HBM to SRAM
-            qi_load_cycles = self.simulate_flash_attention_io_cycle_count(
-                actual_Br, d_h, computational_graph.data_type, pcb_module
-            )
+            # Use pre-computed values for standard blocks, compute for edge cases
+            if actual_Br == Br:
+                init_cycles = init_cycles_standard
+                qi_load_cycles = qi_load_cycles_standard
+                oi_store_cycles = oi_store_cycles_standard
+            else:
+                init_cycles = ceil(actual_Br * d_h / pcb_module.compute_module.total_vector_flops_per_cycle)
+                qi_load_cycles = self.simulate_flash_attention_io_cycle_count(
+                    actual_Br, d_h, computational_graph.data_type, pcb_module
+                )
+                oi_store_cycles = qi_load_cycles
             
             # For each column block j
             inner_loop_cycles = 0
             for j in range(Tc):
                 actual_Bc = min(Bc, s - j * Bc)
                 
-                # Load Kj, Vj from HBM to SRAM
-                kj_load_cycles = self.simulate_flash_attention_io_cycle_count(
-                    actual_Bc, d_h, computational_graph.data_type, pcb_module
-                )
-                vj_load_cycles = self.simulate_flash_attention_io_cycle_count(
-                    actual_Bc, d_h, computational_graph.data_type, pcb_module
-                )
-                
-                # Use L2TileSimulator for Sij = Qi @ Kj^T computation
-                qk_tile = Matmul.L2TileSimulator(
-                    actual_Br, actual_Bc, d_h, computational_graph.data_type,
-                    temp_mapping, pcb_module, self.look_up_table, 
-                    self.dram_look_up_table, self.mem_name
-                )
-                sij_compute_cycles = qk_tile.compute_cycle_count
-                
-                # Online softmax operations (max, exp, sum updates)
-                softmax_cycles = ceil(
-                    actual_Br * actual_Bc * 4 / pcb_module.compute_module.total_vector_flops_per_cycle
-                )
-                
-                # Use L2TileSimulator for accumulator update: Oi += scaled(Sij @ Vj)  
-                av_tile = Matmul.L2TileSimulator(
-                    actual_Br, d_h, actual_Bc, computational_graph.data_type,
-                    temp_mapping, pcb_module, self.look_up_table,
-                    self.dram_look_up_table, self.mem_name
-                )
-                accumulator_cycles = av_tile.compute_cycle_count
+                # Use pre-computed values for standard blocks, compute for edge cases
+                if actual_Bc == Bc:
+                    # Standard block size - use pre-computed values
+                    kj_load_cycles = kj_load_cycles_standard
+                    vj_load_cycles = kj_load_cycles_standard
+                    softmax_cycles = softmax_cycles_standard
+                    
+                    if actual_Br == Br:
+                        # Both dimensions are standard - use pre-computed GEMM results
+                        sij_compute_cycles = qk_tile_standard.compute_cycle_count
+                        accumulator_cycles = av_tile_standard.compute_cycle_count
+                    else:
+                        # Row dimension is edge case, need to compute
+                        qk_tile = Matmul.L2TileSimulator(
+                            actual_Br, Bc, d_h, computational_graph.data_type,
+                            temp_mapping, pcb_module, self.look_up_table, 
+                            self.dram_look_up_table, self.mem_name
+                        )
+                        av_tile = Matmul.L2TileSimulator(
+                            actual_Br, d_h, Bc, computational_graph.data_type,
+                            temp_mapping, pcb_module, self.look_up_table,
+                            self.dram_look_up_table, self.mem_name
+                        )
+                        sij_compute_cycles = qk_tile.compute_cycle_count
+                        accumulator_cycles = av_tile.compute_cycle_count
+                        
+                        # Update softmax cycles for edge row case
+                        softmax_cycles = ceil(
+                            actual_Br * Bc * 4 / pcb_module.compute_module.total_vector_flops_per_cycle
+                        )
+                else:
+                    # Column dimension is edge case - need to compute everything
+                    kj_load_cycles = self.simulate_flash_attention_io_cycle_count(
+                        actual_Bc, d_h, computational_graph.data_type, pcb_module
+                    )
+                    vj_load_cycles = kj_load_cycles
+                    
+                    qk_tile = Matmul.L2TileSimulator(
+                        actual_Br, actual_Bc, d_h, computational_graph.data_type,
+                        temp_mapping, pcb_module, self.look_up_table, 
+                        self.dram_look_up_table, self.mem_name
+                    )
+                    av_tile = Matmul.L2TileSimulator(
+                        actual_Br, d_h, actual_Bc, computational_graph.data_type,
+                        temp_mapping, pcb_module, self.look_up_table,
+                        self.dram_look_up_table, self.mem_name
+                    )
+                    sij_compute_cycles = qk_tile.compute_cycle_count
+                    accumulator_cycles = av_tile.compute_cycle_count
+                    
+                    softmax_cycles = ceil(
+                        actual_Br * actual_Bc * 4 / pcb_module.compute_module.total_vector_flops_per_cycle
+                    )
                 
                 block_cycles = (
                     kj_load_cycles + vj_load_cycles + sij_compute_cycles + 
                     softmax_cycles + accumulator_cycles
                 )
-                inner_loop_cycles = max(inner_loop_cycles, block_cycles)
+                inner_loop_cycles += block_cycles
             
-            # Write Oi back to HBM
-            oi_store_cycles = self.simulate_flash_attention_io_cycle_count(
-                actual_Br, d_h, computational_graph.data_type, pcb_module
-            )
-            
+            # Write Oi back to HBM            
             row_block_cycles = qi_load_cycles + inner_loop_cycles + oi_store_cycles + init_cycles
             total_cycle_count += row_block_cycles
         
-        # Account for parallelism
-        total_cycle_count = ceil(total_cycle_count / parallelism)
+        # Account for all batch items and attention heads
+        # FlashAttention processes each (batch_item, head) combination independently
+        total_cycle_count = total_cycle_count * b * h
         
         return total_cycle_count
 
@@ -301,13 +383,20 @@ class FlashAttention(Operator):
             self,
             block_size_r: int,
             block_size_c: int, 
-            l1_tile_size: int
+            l1_tile_size: int,
+            l0_M_tiling_factor: int,
+            l0_N_tiling_factor: int,
+            l0_K_tiling_factor: int
         ):
             self.block_size_r = block_size_r  # Br - row block size
             self.block_size_c = block_size_c  # Bc - column block size
             self.l1_tile_size = l1_tile_size  # for L1 tiling within blocks
+            self.l0_M_tiling_factor = l0_M_tiling_factor
+            self.l0_N_tiling_factor = l0_N_tiling_factor
+            self.l0_K_tiling_factor = l0_K_tiling_factor
 
         def display(self):
             print(f'{"-"*10} FlashAttention Mapping {"-"*10}')
             print(f"block_size_r: {self.block_size_r}, block_size_c: {self.block_size_c}")
             print(f"l1_tile_size: {self.l1_tile_size}")
+            print(f"l0_M_tiling_factor: {self.l0_M_tiling_factor}, l0_N_tiling_factor: {self.l0_N_tiling_factor}, l0_K_tiling_factor: {self.l0_K_tiling_factor}")

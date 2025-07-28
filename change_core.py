@@ -132,7 +132,8 @@ def run(overall_config):
 case_names = ["inference_LUT"]
 device_types = ["A100"]
 # model_types = ["Llama-3.1-8B", "Llama-2-13B", "Falcon-3-10B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
-model_types = ["Llama-2-13B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
+model_types = ["Llama-3.1-8B"]  # Add "Falcon3-10B" when ready
+# model_types = ["Llama-2-13B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 input_seq_lengths = [8192, 16384, 32768, 65536, 131072, 262144]
 batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128]
 output_seq_lengths = [1]

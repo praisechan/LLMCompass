@@ -12,7 +12,7 @@ import pandas as pd
 import os
 from scalesim.scale_sim import scalesim
 import copy
-
+from tqdm import tqdm
 
 class BatchedMatmul(Operator):
     def __init__(self, data_type: DataType):
@@ -506,7 +506,7 @@ class Matmul(Operator):
                                 best_mapping = mapping
         elif compile_mode == "heuristic-GPU":
             i = 0
-            for l2_tile_M in [64, 128, 256, 512, 1024, 2048]:
+            for l2_tile_M in tqdm([64, 128, 256, 512, 1024, 2048]):
                 for l2_tile_N in [l2_tile_M // 2, l2_tile_M, l2_tile_M * 2]:
                     if K <= 12288:
                         l2_K_tiling_factor_list = [1, 2, 4, 8]
