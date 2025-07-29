@@ -132,7 +132,7 @@ class FlashAttention(Operator):
                     block_size_c * d_h +  # Vj
                     block_size_r * block_size_c +  # Sij
                     block_size_r * d_h    # Oi accumulator
-                ) * self.data_type.word_size
+                )
         
                 if (
                     working_set_size
@@ -141,36 +141,54 @@ class FlashAttention(Operator):
                 ):
                     continue
 
-                for l1_tile_size in [32, 64, 128, 256]:
-                    if l1_tile_size > min(block_size_r, block_size_c, d_h):
+                for l1_tile_M in [32, 64, 128, 256]:
+                    if l1_tile_M > min(block_size_r, d_h):
                         continue
-                    
-                    # Add L0 tiling factor exploration like in Matmul
-                    for (
-                        l0_M_tiling_factor,
-                        l0_N_tiling_factor,
-                        l0_K_tiling_factor,
-                    ) in self.find_permutations(
-                        pcb_module.compute_module.core.systolic_array_count
-                    ):
-                        mapping = self.Mapping(
-                            block_size_r=block_size_r,
-                            block_size_c=block_size_c,
-                            l1_tile_size=l1_tile_size,
-                            l0_M_tiling_factor=l0_M_tiling_factor,
-                            l0_N_tiling_factor=l0_N_tiling_factor,
-                            l0_K_tiling_factor=l0_K_tiling_factor
-                        )
+                    l1_tile_N = l1_tile_M  # L1 tiling is square for simplicity
+     
+                    for l1_tile_K in [32, 64, 128, 256]:
+                        if l1_tile_K > d_h:
+                            continue
                         
-                        cycle_count = self.simulate(
-                            self.computational_graph,
-                            mapping,
-                            pcb_module,
-                        )
-                        
-                        if cycle_count < min_cycle_count:
-                            min_cycle_count = cycle_count
-                            best_mapping = mapping
+                        # Check L1 memory constraint for flash attention blocks
+                        # Need space for: l1_tile_M*l1_tile_K + l1_tile_K*l1_tile_N + l1_tile_M*l1_tile_N
+                        if (
+                            l1_tile_M * l1_tile_N
+                            + l1_tile_N * l1_tile_K
+                            + l1_tile_M * l1_tile_K
+                            > pcb_module.compute_module.core.SRAM_size
+                            // self.data_type.word_size
+                            // 2
+                        ):
+                            continue                
+                        # Add L0 tiling factor exploration like in Matmul
+                        for (
+                            l0_M_tiling_factor,
+                            l0_N_tiling_factor,
+                            l0_K_tiling_factor,
+                        ) in self.find_permutations(
+                            pcb_module.compute_module.core.systolic_array_count
+                        ):
+                            mapping = self.Mapping(
+                                block_size_r=block_size_r,
+                                block_size_c=block_size_c,
+                                l1_tile_M=l1_tile_M,
+                                l1_tile_N=l1_tile_N,
+                                l1_tile_K=l1_tile_K,
+                                l0_M_tiling_factor=l0_M_tiling_factor,
+                                l0_N_tiling_factor=l0_N_tiling_factor,
+                                l0_K_tiling_factor=l0_K_tiling_factor
+                            )
+                            
+                            cycle_count = self.simulate(
+                                self.computational_graph,
+                                mapping,
+                                pcb_module,
+                            )
+                            
+                            if cycle_count < min_cycle_count:
+                                min_cycle_count = cycle_count
+                                best_mapping = mapping
         
         self.best_mapping = best_mapping
         self.best_cycle_count = min_cycle_count
@@ -209,9 +227,9 @@ class FlashAttention(Operator):
             l2_tile_N=Bc,
             l2_tile_K=d_h,
             is_l2_double_buffering=True,
-            l1_tile_M=mapping.l1_tile_size,
-            l1_tile_N=mapping.l1_tile_size,
-            l1_tile_K=mapping.l1_tile_size,
+            l1_tile_M=mapping.l1_tile_M,
+            l1_tile_N=mapping.l1_tile_N,
+            l1_tile_K=mapping.l1_tile_K,
             l2_loop_order="knm",
             l1_loop_order="knm",
             l0_M_tiling_factor=mapping.l0_M_tiling_factor,
@@ -383,14 +401,18 @@ class FlashAttention(Operator):
             self,
             block_size_r: int,
             block_size_c: int, 
-            l1_tile_size: int,
+            l1_tile_M: int,
+            l1_tile_N: int,
+            l1_tile_K: int,
             l0_M_tiling_factor: int,
             l0_N_tiling_factor: int,
             l0_K_tiling_factor: int
         ):
             self.block_size_r = block_size_r  # Br - row block size
             self.block_size_c = block_size_c  # Bc - column block size
-            self.l1_tile_size = l1_tile_size  # for L1 tiling within blocks
+            self.l1_tile_M = l1_tile_M  # for L1 tiling within blocks
+            self.l1_tile_N = l1_tile_N
+            self.l1_tile_K = l1_tile_K
             self.l0_M_tiling_factor = l0_M_tiling_factor
             self.l0_N_tiling_factor = l0_N_tiling_factor
             self.l0_K_tiling_factor = l0_K_tiling_factor
@@ -398,5 +420,5 @@ class FlashAttention(Operator):
         def display(self):
             print(f'{"-"*10} FlashAttention Mapping {"-"*10}')
             print(f"block_size_r: {self.block_size_r}, block_size_c: {self.block_size_c}")
-            print(f"l1_tile_size: {self.l1_tile_size}")
+            print(f"l1_tile_M: {self.l1_tile_M}, l1_tile_N: {self.l1_tile_N}, l1_tile_K: {self.l1_tile_K}")
             print(f"l0_M_tiling_factor: {self.l0_M_tiling_factor}, l0_N_tiling_factor: {self.l0_N_tiling_factor}, l0_K_tiling_factor: {self.l0_K_tiling_factor}")
