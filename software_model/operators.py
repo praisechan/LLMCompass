@@ -108,3 +108,31 @@ class Transpose(Operator):
         self.output_shape = [self.input_shape[i] for i in permute]
         output = Tensor(self.output_shape, self.data_type)
         return output
+
+
+class RepeatInterleave(Operator):
+    def __init__(self, data_type: DataType):
+        super().__init__(0, 0, 0, 0, data_type)
+        self.input_shape = None
+        self.output_shape = None
+        self.repeats = None
+        self.dim = None
+
+    def __call__(self, input: Tensor, repeats: int, dim: int) -> Tensor:
+        self.input_shape = input.shape
+        self.repeats = repeats
+        self.dim = dim
+        
+        # Calculate output shape
+        self.output_shape = input.shape.copy()
+        self.output_shape[dim] = self.output_shape[dim] * repeats
+        
+        # This operation just replicates data, so minimal compute but more memory access
+        self.flop_count = 0
+        self.load_count = input.size  # Read original data
+        self.store_count = input.size * repeats  # Write replicated data
+        self.io_count = self.load_count + self.store_count
+        self.peak_memory_usage = input.size * (1 + repeats)  # Input + output
+        
+        output = Tensor(self.output_shape, self.data_type)
+        return output

@@ -15,13 +15,13 @@ def run(overall_config):
     print(f"Current config is {model_type}, {input_seq_length}, {batch_size}, {output_seq_length}\n")
 
     model_config = {
-        "Llama-2-7B": {"d_model":4096, "n_heads":32, "intermediate_dim":11008, "n_layers":32},# "n_kv_heads":32,
-        "Llama-2-13B": {"d_model":5120, "n_heads":40, "intermediate_dim":13824, "n_layers":40},# "n_kv_heads":40,
-        "Llama-3.1-8B": {"d_model":4096, "n_heads":32, "intermediate_dim":14336, "n_layers":32},# "n_kv_heads":8,
-        "Qwen-2.5-14B": {"d_model":5120, "n_heads":40, "intermediate_dim":13824, "n_layers":48},# "n_kv_heads":8,
-        "OPT-13B": {"d_model":5120, "n_heads":40, "intermediate_dim":20480, "n_layers":40},# "n_kv_heads":40,
-        "OPT-30B": {"d_model":7168, "n_heads":56, "intermediate_dim":28672, "n_layers":48},# "n_kv_heads":56,
-        "Falcon-3-10B": {"d_model":3072, "n_heads":12, "intermediate_dim":23040, "n_layers":40},# "n_kv_heads":4,
+        "Llama-2-7B": {"d_model":4096, "n_heads":32, "n_kv_heads":32, "intermediate_dim":11008, "n_layers":32},
+        "Llama-2-13B": {"d_model":5120, "n_heads":40, "n_kv_heads":40, "intermediate_dim":13824, "n_layers":40},
+        "Llama-3.1-8B": {"d_model":4096, "n_heads":32, "n_kv_heads":8, "intermediate_dim":14336, "n_layers":32},
+        "Qwen-2.5-14B": {"d_model":5120, "n_heads":40, "n_kv_heads":8, "intermediate_dim":13824, "n_layers":48},
+        "OPT-13B": {"d_model":5120, "n_heads":40, "n_kv_heads":40, "intermediate_dim":20480, "n_layers":40},
+        "OPT-30B": {"d_model":7168, "n_heads":56, "n_kv_heads":56, "intermediate_dim":28672, "n_layers":48},
+        "Falcon-3-10B": {"d_model":3072, "n_heads":12, "n_kv_heads":4, "intermediate_dim":23040, "n_layers":40}
     }
 
     # Get the configuration based on defaulting to default_config
@@ -30,7 +30,7 @@ def run(overall_config):
     # Extract the values from the config
     d_model = model_config["d_model"]
     n_heads = model_config["n_heads"]
-    # n_kv_heads = model_config["n_kv_heads"]
+    n_kv_heads = model_config["n_kv_heads"]
     intermediate_dim = model_config["intermediate_dim"]
     n_layers = model_config["n_layers"]
 
@@ -55,6 +55,7 @@ def run(overall_config):
     model_init = TransformerBlockInitComputationTP(
         d_model=d_model,
         n_heads=n_heads,
+        n_kv_heads=n_kv_heads,
         intermediate_dim=intermediate_dim,
         device_count=device_count,
         data_type=data_type_dict["fp16"],
@@ -62,6 +63,7 @@ def run(overall_config):
     model_auto_regression = TransformerBlockAutoRegressionTP(
         d_model=d_model,
         n_heads=n_heads,
+        n_kv_heads=n_kv_heads,
         intermediate_dim=intermediate_dim,
         device_count=device_count,
         data_type=data_type_dict["fp16"],
