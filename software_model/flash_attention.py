@@ -121,8 +121,9 @@ class FlashAttention(Operator):
         d_h = self.computational_graph.head_dim
         
         # Flash attention block sizes
-        for block_size_r in tqdm([32, 64, 128, 256, 512, 1024, 2048]):  # row block size (Br)
-            for block_size_c in [32, 64, 128, 256, 512, 1024, 2048]:  # column block size (Bc)
+        for block_size_r in tqdm([32, 64, 128, 256, 512, 1024, 2048, 4096]):  # row block size (Br)
+            for block_size_c in [32, 64, 128, 256, 512, 1024, 2048, 4096]:  # column block size (Bc)
+            # for block_size_c in [block_size_r//2, block_size_r, block_size_r*2]:  # column block size (Bc)
                 # Check if blocks fit in SRAM
                 # Need space for: Qi (Br x d_h), Kj (Bc x d_h), Vj (Bc x d_h), 
                 # Sij (Br x Bc), and output accumulator Oi (Br x d_h)
@@ -146,9 +147,11 @@ class FlashAttention(Operator):
                         continue
                     l1_tile_N = l1_tile_M  # L1 tiling is square for simplicity
      
-                    for l1_tile_K in [32, 64, 128, 256]:
-                        if l1_tile_K > d_h:
-                            continue
+                    for l1_K_tiling_factor in [1, 2, 4, 8, 16, 32]:
+                        l1_tile_K = ceil(d_h / l1_K_tiling_factor)
+                    # for l1_tile_K in [32, 64, 128, 256]:
+                        # if l1_tile_K > d_h:
+                        #     continue
                         
                         # Check L1 memory constraint for flash attention blocks
                         # Need space for: l1_tile_M*l1_tile_K + l1_tile_K*l1_tile_N + l1_tile_M*l1_tile_N
@@ -180,7 +183,7 @@ class FlashAttention(Operator):
                                 l0_K_tiling_factor=l0_K_tiling_factor
                             )
                             
-                            cycle_count = self.simulate(
+                            cycle_count, debug_info = self.simulate(
                                 self.computational_graph,
                                 mapping,
                                 pcb_module,
@@ -189,6 +192,7 @@ class FlashAttention(Operator):
                             if cycle_count < min_cycle_count:
                                 min_cycle_count = cycle_count
                                 best_mapping = mapping
+                                best_mapping_debug_info = debug_info
         
         self.best_mapping = best_mapping
         self.best_cycle_count = min_cycle_count
@@ -196,6 +200,16 @@ class FlashAttention(Operator):
         self.best_latency = self.best_cycle_count / pcb_module.compute_module.clock_freq
         self.latency = self.best_latency
         
+        print(f"debug info: {best_mapping_debug_info}")
+        
+        # Debugging output
+        print(f"Total Cycle Count: {best_mapping_debug_info.total_cycle_count},\
+            Kj Load Cycles Accumulated: {best_mapping_debug_info.kj_load_cycles_accumulated},\
+            Vj Load Cycles Accumulated: {best_mapping_debug_info.vj_load_cycles_accumulated},\
+            Sij Compute Cycles Accumulated: {best_mapping_debug_info.sij_compute_cycles_accumulated},\
+            Softmax Cycles Accumulated: {best_mapping_debug_info.softmax_cycles_accumulated},\
+            Accumulator Cycles Accumulated: {best_mapping_debug_info.accumulator_cycles_accumulated}")        
+
         return self.latency
 
     def simulate(
@@ -267,6 +281,13 @@ class FlashAttention(Operator):
         # Pre-compute init cycles for standard block size
         init_cycles_standard = ceil(Br * d_h / pcb_module.compute_module.total_vector_flops_per_cycle)
         
+        # Initialize accumulators for debugging        
+        kj_load_cycles_accumulated = 0
+        vj_load_cycles_accumulated = 0
+        sij_compute_cycles_accumulated = 0 
+        softmax_cycles_accumulated = 0
+        accumulator_cycles_accumulated = 0
+        
         # For each row block i
         for i in range(Tr):
             actual_Br = min(Br, s - i * Br)
@@ -285,7 +306,11 @@ class FlashAttention(Operator):
             
             # For each column block j
             inner_loop_cycles = 0
+            
             for j in range(Tc):
+                if j * Bc >= (i+1) * Br:
+                    # In Masked self attention, only compute lower triangular matrix. skip blocks that are not needed.
+                    continue
                 actual_Bc = min(Bc, s - j * Bc)
                 
                 # Use pre-computed values for standard blocks, compute for edge cases
@@ -347,6 +372,13 @@ class FlashAttention(Operator):
                     softmax_cycles + accumulator_cycles
                 )
                 inner_loop_cycles += block_cycles
+                
+                # for debugging: accumulate cycles for each column block
+                kj_load_cycles_accumulated += kj_load_cycles
+                vj_load_cycles_accumulated += vj_load_cycles
+                sij_compute_cycles_accumulated += sij_compute_cycles
+                softmax_cycles_accumulated += softmax_cycles
+                accumulator_cycles_accumulated += accumulator_cycles
             
             # Write Oi back to HBM            
             row_block_cycles = qi_load_cycles + inner_loop_cycles + oi_store_cycles + init_cycles
@@ -356,7 +388,17 @@ class FlashAttention(Operator):
         # FlashAttention processes each (batch_item, head) combination independently
         total_cycle_count = total_cycle_count * b * h
         
-        return total_cycle_count
+        # Debugging output
+        debug_info = {
+            "Total Cycle Count": total_cycle_count,
+            "Kj Load Cycles Accumulated": kj_load_cycles_accumulated,
+            "Vj Load Cycles Accumulated": vj_load_cycles_accumulated,
+            "Sij Compute Cycles Accumulated": sij_compute_cycles_accumulated,
+            "Softmax Cycles Accumulated": softmax_cycles_accumulated,
+            "Accumulator Cycles Accumulated": accumulator_cycles_accumulated
+        }
+        
+        return total_cycle_count, debug_info
 
     def simulate_flash_attention_io_cycle_count(
         self, M: int, N: int, data_type: DataType, pcb_module: Device

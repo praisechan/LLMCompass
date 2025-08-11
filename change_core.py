@@ -94,11 +94,11 @@ def run(overall_config):
         init_latency_simulated = model_init.compile_and_simulate(system, "heuristic-GPU")
         print(f"{name}, {init_latency_simulated}, {auto_regression_latency_simulated}")
         with lock:
-            with open(f"{dir}/core_size_results_init.csv", "a") as f:
+            with open(f"{dir}/core_size_results_init_valkyrie.csv", "a") as f:
                 f.write(
                     f"{name}, {compute_area_mm2+io_area_mm2}, {init_latency_simulated}, {init_latency_simulated*n_layers}, {model_init.simluate_log}\n"
                 )
-            with open(f"{dir}/core_size_results_ar.csv", "a") as f:
+            with open(f"{dir}/core_size_results_ar_valkyrie.csv", "a") as f:
                 f.write(
                     f"{name}, {compute_area_mm2+io_area_mm2}, {auto_regression_latency_simulated}, {auto_regression_latency_simulated*n_layers}, {model_auto_regression.simluate_log}\n"
                 )
@@ -132,13 +132,14 @@ def run(overall_config):
 
 # Define the options for each parameter
 case_names = ["inference_LUT"]
-device_types = ["A100","A100_In_Flash"]
+device_types = ["A100"]
 # model_types = [ "Llama-2-13B", "Falcon-3-10B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 model_types = ["Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 # model_types = ["Llama-3.1-8B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 # input_seq_lengths = [8192, 16384, 32768, 65536, 131072]
-input_seq_lengths = [8192, 16384, 32768]
+input_seq_lengths = [131072]
 batch_sizes = [1, 4, 16, 64]
+# batch_sizes = [128, 512, 2048]
 # batch_sizes = [1, 2, 4, 8, 16, 32, 64]
 output_seq_lengths = [1]
 
