@@ -200,15 +200,15 @@ class FlashAttention(Operator):
         self.best_latency = self.best_cycle_count / pcb_module.compute_module.clock_freq
         self.latency = self.best_latency
         
-        print(f"debug info: {best_mapping_debug_info}")
+        # print(f"debug info: {best_mapping_debug_info}")
         
-        # Debugging output
-        print(f"Total Cycle Count: {best_mapping_debug_info.total_cycle_count},\
-            Kj Load Cycles Accumulated: {best_mapping_debug_info.kj_load_cycles_accumulated},\
-            Vj Load Cycles Accumulated: {best_mapping_debug_info.vj_load_cycles_accumulated},\
-            Sij Compute Cycles Accumulated: {best_mapping_debug_info.sij_compute_cycles_accumulated},\
-            Softmax Cycles Accumulated: {best_mapping_debug_info.softmax_cycles_accumulated},\
-            Accumulator Cycles Accumulated: {best_mapping_debug_info.accumulator_cycles_accumulated}")        
+        # # Debugging output
+        # print(f"Total Cycle Count: {best_mapping_debug_info.total_cycle_count},\
+        #     Kj Load Cycles Accumulated: {best_mapping_debug_info.kj_load_cycles_accumulated},\
+        #     Vj Load Cycles Accumulated: {best_mapping_debug_info.vj_load_cycles_accumulated},\
+        #     Sij Compute Cycles Accumulated: {best_mapping_debug_info.sij_compute_cycles_accumulated},\
+        #     Softmax Cycles Accumulated: {best_mapping_debug_info.softmax_cycles_accumulated},\
+        #     Accumulator Cycles Accumulated: {best_mapping_debug_info.accumulator_cycles_accumulated}")        
 
         return self.latency
 

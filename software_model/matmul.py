@@ -1076,9 +1076,9 @@ class Matmul(Operator):
                 elif self.mem_name == "HBM3":
                   size = int(M * N * word_size / 64) #divide by 64 Byte
                   num_bank = 16
-                  num_ch = 40
+                  num_ch = 80
                   mem_type = "HBM3"
-                  config_file = "./DRAMsim3/configs/LLMcompass/HBM3_8Gb_x128_40ch.ini"
+                  config_file = "./DRAMsim3/configs/LLMcompass/HBM3_8Gb_x128_80ch.ini"
                 else:
                     raise ValueError("Wrong memory name!")
 

@@ -138,9 +138,9 @@ model_types = ["Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 # model_types = ["Llama-3.1-8B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 input_seq_lengths = [8192, 16384, 32768]
 # input_seq_lengths = [16384]
-batch_sizes = [1]
+batch_sizes = [128]
 # batch_sizes = [128, 512, 2048]
-batch_sizes = [1, 4, 8, 16, 32, 64, 128]
+# batch_sizes = [1, 4, 8, 16, 32, 64, 128]
 # batch_sizes = [1, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 output_seq_lengths = [1]
 
