@@ -115,6 +115,42 @@ def gen_LStrace(args):
     generated_insts += 1
   trace_file.close()
 
+def gen_LStrace_load_only(args):
+  if args.load_store_ratio < 0.0 or args.load_store_ratio > 1.0:
+    print("Invalid load store ratio.")
+    sys.exit(-2)
+
+  # constants
+  CACHE_LINE_SIZE = 64 # the main memory access granularity
+  RANDOM_SEED = 0
+  random.seed(a=RANDOM_SEED)
+  trace_file = open(args.out_file, "w")
+
+  generated_insts = 0
+  # variables used depending on the access pattern
+  stream_addr = 0
+
+  while generated_insts < args.num_insts:
+    req_type = "LD"
+    ls_sample = random.uniform(0.0, 1.0)
+    if ls_sample > args.load_store_ratio:
+      req_type = "ST"
+
+    cur_line = req_type + " "
+    if args.access_pattern == 'stream':
+        cur_line = cur_line + str(stream_addr)
+        stream_addr += CACHE_LINE_SIZE
+    elif args.access_pattern == 'random':
+        rand_addr = random.getrandbits(30) 
+        cur_line = cur_line + str(rand_addr)
+    else:
+        print ("Error: Unimplemented access pattern: ", args.access_pattern, "!")
+        sys.exit(-2)
+
+    trace_file.write(cur_line + '\n')
+    generated_insts += 1
+  trace_file.close()
+
 
 def main():
   args = parse_args()
@@ -126,7 +162,8 @@ def main():
   if args.trace_type == "SimpleO3":
     gen_SimpleO3_trace(args)
   elif args.trace_type == "LStrace":
-    gen_LStrace(args)
+    # gen_LStrace(args)
+    gen_LStrace_load_only(args)
   else:
     print("Unrecognized trace type")
     exit(-2)
