@@ -14,20 +14,20 @@ namespace Ramulator
         {"HBM3_2Gb", {2 << 10, 128, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
         {"HBM3_4Gb", {4 << 10, 128, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
         {"HBM3_8Gb", {8 << 10, 128, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
-        {"HBM3_8Gb_40CH", {8 << 10, 128, {40, 80, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
+        {"HBM3_8Gb_40CH", {(8 << 10) * 40, 128, {40, 80, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
     };
 
     inline static const std::map<std::string, std::vector<int>> timing_presets = {
         //   name       rate   nBL  nCL  nRCDRD  nRCDWR  nRP  nRAS  nRC  nWR  nRTPS  nRTPL  nCWL  nCCDS  nCCDL  nRRDS  nRRDL  nWTRS  nWTRL  nRTW  nFAW  nRFC  nRFCSB  nREFI  nREFISB  nRREFD  tCK_ps
-        {"HBM3_2Gbps", {2000, 4, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 1000}},
-        {"HBM3_5.2Gbps", {5200, 4, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 2600}},
+        {"HBM3_2Gbps", {2000, 2, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 1000}},
+        {"HBM3_5.2Gbps", {5200, 2, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 384}},
         // TODO: Find more sources on HBM3 timings...
     };
 
     /************************************************
      *                Organization
      ***********************************************/
-    const int m_internal_prefetch_size = 2;
+    const int m_internal_prefetch_size = 4;
 
     inline static constexpr ImplDef m_levels = {
         "channel",
