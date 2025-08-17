@@ -189,7 +189,7 @@ namespace Ramulator
     void set_organization()
     {
       // Channel width
-      m_channel_width = param_group("org").param<int>("channel_width").default_val(64);
+      m_channel_width = param_group("org").param<int>("channel_width").default_val(32);
 
       // Organization
       m_organization.count.resize(m_levels.size(), -1);
