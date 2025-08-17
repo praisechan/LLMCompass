@@ -11,10 +11,10 @@ namespace Ramulator
   public:
     inline static const std::map<std::string, Organization> org_presets = {
         //   name     density   DQ    Ch Pch  Bg Ba   Ro     Co
-        {"HBM3_2Gb", {2 << 10, 64, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
-        {"HBM3_4Gb", {4 << 10, 64, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
-        {"HBM3_8Gb", {8 << 10, 64, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
-        {"HBM3_8Gb_80CH", {(8 << 10) * 80, 64, {80, 160, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
+        {"HBM3_2Gb", {1 << 10, 64, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
+        {"HBM3_4Gb", {2 << 10, 64, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
+        {"HBM3_8Gb", {4 << 10, 64, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
+        {"HBM3_8Gb_80CH", {(4 << 10) * 80, 64, {80, 160, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
     };
 
     inline static const std::map<std::string, std::vector<int>> timing_presets = {
