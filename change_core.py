@@ -11,14 +11,15 @@ import itertools
 
 
 def run(overall_config):
-    run_name, device_type, model_type, input_seq_length, batch_size, output_seq_length = overall_config
-    print(f"Current config is {model_type}, {input_seq_length}, {batch_size}, {output_seq_length}\n")
+    run_name, device_type, model_type, input_seq_length, batch_size, output_seq_length, use_dram_simulator = overall_config
+    print(f"Current config is {model_type}, {input_seq_length}, {batch_size}, {output_seq_length}, {use_dram_simulator}\n")
 
     model_config = {
         "Llama-2-7B": {"d_model":4096, "n_heads":32, "n_kv_heads":32, "intermediate_dim":11008, "n_layers":32},
         "Llama-2-13B": {"d_model":5120, "n_heads":40, "n_kv_heads":40, "intermediate_dim":13824, "n_layers":40},
         "Llama-3.1-8B": {"d_model":4096, "n_heads":32, "n_kv_heads":8, "intermediate_dim":14336, "n_layers":32},
         "Qwen-2.5-14B": {"d_model":5120, "n_heads":40, "n_kv_heads":8, "intermediate_dim":13824, "n_layers":48},
+        "Qwen-2.5-32B": {"d_model":5120, "n_heads":40, "n_kv_heads":8, "intermediate_dim":27648, "n_layers":64},
         "OPT-13B": {"d_model":5120, "n_heads":40, "n_kv_heads":40, "intermediate_dim":20480, "n_layers":40},
         "OPT-30B": {"d_model":7168, "n_heads":56, "n_kv_heads":56, "intermediate_dim":28672, "n_layers":48},
         "Falcon-3-10B": {"d_model":3072, "n_heads":12, "n_kv_heads":4, "intermediate_dim":23040, "n_layers":40}
@@ -59,6 +60,7 @@ def run(overall_config):
         intermediate_dim=intermediate_dim,
         device_count=device_count,
         data_type=data_type_dict["fp16"],
+        use_dram_simulator=use_dram_simulator
     )
     model_auto_regression = TransformerBlockAutoRegressionTP(
         d_model=d_model,
@@ -67,7 +69,8 @@ def run(overall_config):
         intermediate_dim=intermediate_dim,
         device_count=device_count,
         data_type=data_type_dict["fp16"],
-        compute_mode=compute_mode
+        compute_mode=compute_mode,
+        use_dram_simulator=use_dram_simulator
     )
     _ = model_init(
         Tensor([batch_size, input_seq_length, model_init.d_model], data_type_dict["fp16"])
@@ -131,17 +134,19 @@ def run(overall_config):
     #         p.join()
 
 # Define the options for each parameter
-case_names = ["inference_LUT"]
-device_types = ["A100"]
+case_names = ["inference_LUT_with_masked"]
+device_types = ["H100"]
 # model_types = [ "Llama-2-13B", "Falcon-3-10B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
-model_types = ["Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
+model_types = ["Qwen-2.5-32B"]  # Add "Falcon3-10B" when ready
 # model_types = ["Llama-3.1-8B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 # input_seq_lengths = [8192, 16384, 32768, 65536, 131072]
-input_seq_lengths = [131072]
-batch_sizes = [1, 4, 16, 64]
+input_seq_lengths = [8192, 16384, 32768]
+# input_seq_lengths = [131072]
+# batch_sizes = [1, 4, 16, 64]
 # batch_sizes = [128, 512, 2048]
-# batch_sizes = [1, 2, 4, 8, 16, 32, 64]
+batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128]
 output_seq_lengths = [1]
+use_dram_simulator = [False]
 
 # Generate all combinations automatically
 overall_configs = list(itertools.product(
@@ -150,7 +155,8 @@ overall_configs = list(itertools.product(
     model_types,
     input_seq_lengths,
     batch_sizes,
-    output_seq_lengths
+    output_seq_lengths,
+    use_dram_simulator
 ))
 
 for i in overall_configs:

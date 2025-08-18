@@ -21,7 +21,7 @@ from hardware_model.system import System
 
 class TransformerBlockInitComputationTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, use_flash_attention: bool = True):
+    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, use_flash_attention: bool = True, use_dram_simulator: bool = False):
         super().__init__(0, 0, 0, 0, data_type, None)
         
         self.d_model = d_model
@@ -30,7 +30,8 @@ class TransformerBlockInitComputationTP(Operator):
         self.intermediate_dim = intermediate_dim
         self.device_count = device_count
         self.use_flash_attention = use_flash_attention
-        
+        self.use_dram_simulator = use_dram_simulator
+
         # parameters per device
         d = d_model
         self.Wq = Tensor([d, d // device_count], data_type)
@@ -48,9 +49,9 @@ class TransformerBlockInitComputationTP(Operator):
         # self.W2 = Tensor([4 * d // device_count, d], data_type)
         # operators per device
         # # multi-head attention
-        self.Q_proj = Matmul(data_type)
-        self.K_proj = Matmul(data_type)
-        self.V_proj = Matmul(data_type)
+        self.Q_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
+        self.K_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
+        self.V_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.K_repeat = RepeatInterleave(data_type)
         self.V_repeat = RepeatInterleave(data_type)
         self.Q_reshape = Reshape(data_type)
@@ -63,18 +64,18 @@ class TransformerBlockInitComputationTP(Operator):
             self.flash_attention = FlashAttention(data_type)
         else:
             # Keep existing attention operators
-            self.Q_mul_K = BatchedMatmul(data_type)
+            self.Q_mul_K = BatchedMatmul(data_type, use_dram_simulator=use_dram_simulator)
             self.A_softmax = Softmax(data_type)
-            self.A_mul_V = BatchedMatmul(data_type)
+            self.A_mul_V = BatchedMatmul(data_type, use_dram_simulator=use_dram_simulator)
         self.H_transpose = Transpose(data_type)
         self.H_reshape = Reshape(data_type)
-        self.H_matmul0 = Matmul(data_type)
+        self.H_matmul0 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.layer_norm0 = LayerNorm(data_type)
         self.allreduce_mha = AllReduceMultiPCB(data_type)
         # # feed-forward network
-        self.H_matmul1 = Matmul(data_type)
+        self.H_matmul1 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.H_gelu = GeLU(data_type)
-        self.H_matmul2 = Matmul(data_type)
+        self.H_matmul2 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.layer_norm1 = LayerNorm(data_type)
         self.allreduce_ffn = AllReduceMultiPCB(data_type)
 
@@ -424,13 +425,14 @@ class TransformerBlockInitComputationTP(Operator):
 
 class TransformerBlockAutoRegressionTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, compute_mode: str = "default"):
+    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, compute_mode: str = "default", use_dram_simulator: bool = False):
         super().__init__(0, 0, 0, 0, data_type)
         self.d_model = d_model
         self.n_heads = n_heads
         self.n_kv_heads = n_kv_heads
         self.intermediate_dim = intermediate_dim
         self.device_count = device_count
+        self.use_dram_simulator = use_dram_simulator
         # parameters per device
         d = d_model
         self.Wq = Tensor([d, d // device_count], data_type)
@@ -446,9 +448,9 @@ class TransformerBlockAutoRegressionTP(Operator):
         self.W2 = Tensor([self.intermediate_dim // device_count, d], data_type)
         # operators per device
         # # multi-head attention
-        self.Q_proj = Matmul(data_type)
-        self.K_proj = Matmul(data_type)
-        self.V_proj = Matmul(data_type)
+        self.Q_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
+        self.K_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
+        self.V_proj = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.K_repeat = RepeatInterleave(data_type)
         self.V_repeat = RepeatInterleave(data_type)
         self.Q_reshape = Reshape(data_type)
@@ -459,18 +461,18 @@ class TransformerBlockAutoRegressionTP(Operator):
         self.V_transpose = Transpose(data_type)
         self.K_concat = Concat(data_type)
         self.V_concat = Concat(data_type)
-        self.Q_mul_K = BatchedMatmul(data_type)
+        self.Q_mul_K = BatchedMatmul(data_type, use_dram_simulator=use_dram_simulator)
         self.A_softmax = Softmax(data_type)
-        self.A_mul_V = BatchedMatmul(data_type)
+        self.A_mul_V = BatchedMatmul(data_type, use_dram_simulator=use_dram_simulator)
         self.H_transpose = Transpose(data_type)
         self.H_reshape = Reshape(data_type)
-        self.H_matmul0 = Matmul(data_type)
+        self.H_matmul0 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.layer_norm0 = LayerNorm(data_type)
         self.allreduce_mha = AllReduceMultiPCB(data_type)
         # # feed-forward network
-        self.H_matmul1 = Matmul(data_type)
+        self.H_matmul1 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.H_gelu = GeLU(data_type)
-        self.H_matmul2 = Matmul(data_type)
+        self.H_matmul2 = Matmul(data_type, use_dram_simulator=use_dram_simulator)
         self.layer_norm1 = LayerNorm(data_type)
         self.allreduce_ffn = AllReduceMultiPCB(data_type)
         

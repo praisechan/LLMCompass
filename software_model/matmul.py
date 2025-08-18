@@ -15,11 +15,12 @@ import copy
 from tqdm import tqdm
 
 class BatchedMatmul(Operator):
-    def __init__(self, data_type: DataType):
+    def __init__(self, data_type: DataType, use_dram_simulator: bool = False):
         super().__init__(0, 0, 0, 0, data_type)
         self.input1_shape = None
         self.input2_shape = None
         self.output_shape = None
+        self.use_dram_simulator = use_dram_simulator
 
     def __call__(self, input1: Tensor, input2: Tensor) -> Tensor:
         # [b, M, K] * [b, K, N] = [b, M, N]
@@ -38,7 +39,7 @@ class BatchedMatmul(Operator):
         return output
 
     def roofline_model(self, pcb_module: Device):
-        matmul = Matmul(self.data_type)
+        matmul = Matmul(self.data_type, self.use_dram_simulator)
         _ = matmul(Tensor([self.M, self.K]), Tensor([self.K, self.N]))
         matmul_latency = matmul.roofline_model(pcb_module)
         self.roofline_latency = matmul_latency * self.bs
@@ -55,13 +56,13 @@ class BatchedMatmul(Operator):
     #     return self.latency
 
     def compile_and_simulate(self, pcb_module: Device, compile_mode: str):
-        matmul = Matmul(self.data_type)
+        matmul = Matmul(self.data_type, self.use_dram_simulator)
         _ = matmul(Tensor([self.M, self.K]), Tensor([self.K, self.N]))
         matmul_latency1 = (
             matmul.compile_and_simulate(pcb_module, compile_mode) * self.bs
         )
 
-        matmul = Matmul(self.data_type)
+        matmul = Matmul(self.data_type, self.use_dram_simulator)
         _ = matmul(
             Tensor([self.M, self.K * self.bs]), Tensor([self.K * self.bs, self.N])
         )
@@ -120,7 +121,7 @@ class BatchedMatmul(Operator):
 
 
 class Matmul(Operator):
-    def __init__(self, data_type: DataType):
+    def __init__(self, data_type: DataType, use_dram_simulator: bool = False):
         super().__init__(0, 0, 0, 0, data_type)
         self.input1_shape = None
         self.input2_shape = None
@@ -130,6 +131,7 @@ class Matmul(Operator):
         self.best_mapping = None
 
         self.mem_name = os.getenv("mem_name")
+        self.use_dram_simulator = use_dram_simulator
 
     def __call__(self, input1: Tensor, input2: Tensor) -> Tensor:
         # [bs, M, K] * [K, N] = [bs, M, N]
@@ -841,7 +843,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name                
+                self.mem_name,
+                self.use_dram_simulator
             )
         if M_remain != 0:
             l2_tiles[-1, :N_l2_t, :K_l2_t] = self.L2TileSimulator(
@@ -853,7 +856,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if N_remain != 0:
             l2_tiles[:M_l2_t, -1, :K_l2_t] = self.L2TileSimulator(
@@ -865,7 +869,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if K_remain != 0:
             l2_tiles[:M_l2_t, :N_l2_t, -1] = self.L2TileSimulator(
@@ -877,7 +882,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if M_remain * N_remain != 0:
             l2_tiles[-1, -1, :K_l2_t] = self.L2TileSimulator(
@@ -889,7 +895,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if M_remain * K_remain != 0:
             l2_tiles[-1, :N_l2_t, -1] = self.L2TileSimulator(
@@ -901,7 +908,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if N_remain * K_remain != 0:
             l2_tiles[:M_l2_t, -1, -1] = self.L2TileSimulator(
@@ -913,7 +921,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
         if M_remain * N_remain * K_remain != 0:
             l2_tiles[-1, -1, -1] = self.L2TileSimulator(
@@ -925,7 +934,8 @@ class Matmul(Operator):
                 pcb_module,
                 self.look_up_table,
                 self.dram_look_up_table,
-                self.mem_name
+                self.mem_name,
+                self.use_dram_simulator
             )
 
         total_cycle_count = 0
@@ -1016,8 +1026,10 @@ class Matmul(Operator):
             look_up_table: pd.DataFrame,
             dram_look_up_table: pd.DataFrame,
             mem_name: str,
+            use_dram_simulator: bool
         ):
             self.mem_name = mem_name
+            self.use_dram_simulator = use_dram_simulator
 
             # print(f'L2 tile: {M} {N} {K}')
             self.M = M
@@ -1136,23 +1148,24 @@ class Matmul(Operator):
         def simulate_l2_tile_io_cycle_count(
             self, M: int, N: int, data_type: DataType, chiplet_module: Device, dram_look_up_table: pd.DataFrame
         ):
-            io_latency = self.write_lut(M=M, N=N, word_size=data_type.word_size, dram_look_up_table=dram_look_up_table)
-            
-            # convert latency(nanosecond) to cycle
-            freq_in_GHz = chiplet_module.compute_module.clock_freq / 10**9
-            io_cycle = io_latency / freq_in_GHz
+            if self.use_dram_simulator:
+                io_latency = self.write_lut(M=M, N=N, word_size=data_type.word_size, dram_look_up_table=dram_look_up_table)
+                
+                # convert latency(nanosecond) to cycle
+                freq_in_GHz = chiplet_module.compute_module.clock_freq / 10**9
+                io_cycle = io_latency / freq_in_GHz
 
-            return io_cycle
-                        
-            # return ceil(
-            #     M
-            #     * N
-            #     * data_type.word_size
-            #     / (
-            #         chiplet_module.io_module.bandwidth
-            #         / chiplet_module.compute_module.clock_freq
-            #     )
-            # )
+                return io_cycle
+            else:         
+                return ceil(
+                    M
+                    * N
+                    * data_type.word_size
+                    / (
+                        chiplet_module.io_module.bandwidth
+                        / chiplet_module.compute_module.clock_freq
+                    )
+                )
 
         def simulate_l2_tile_compute_cycle_count(
             self,
