@@ -97,12 +97,20 @@ int main(int argc, char* argv[]) {
 
   int tick_mult = frontend_tick * mem_tick;
 
+  // Track when all requests are truly completed (including the last request)
+  uint64_t last_request_finished_cycle = 0;
+  bool simulation_finished = false;
+
   for (uint64_t i = 0;; i++) {
     if (((i % tick_mult) % mem_tick) == 0) {
       frontend->tick();
     }
 
-    if (frontend->is_finished()) {
+    // Check if all requests are completed (issued + all pending requests served)
+    if (!simulation_finished && frontend->all_requests_completed()) {
+      last_request_finished_cycle = i;
+      simulation_finished = true;
+      std::cout << "Last request finished at cycle: " << last_request_finished_cycle << std::endl;
       break;
     }
 

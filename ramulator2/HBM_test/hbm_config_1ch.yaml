@@ -1,8 +1,8 @@
 Frontend:
   impl: LoadStoreTrace
-  clock_ratio: 10000
-  num_expected_insts: 100
-  path: ./HBM_test/trace/test_LStrace_100.trace
+  clock_ratio: 1
+  num_expected_insts: 1000
+  path: ./HBM_test/trace/stream_LS_1000_1ch.trace
 
   Translation:
     impl: NoTranslation
@@ -16,9 +16,9 @@ MemorySystem:
   DRAM:
     impl: HBM3
     org:
-      preset: HBM3_8Gb_40CH
+      preset: HBM3_8Gb
     timing:
-      preset: HBM3_5.2Gbps 
+      preset: HBM3_2Gbps 
 
   Controller:
     impl: Generic
@@ -32,4 +32,5 @@ MemorySystem:
     plugins:
 
   AddrMapper:
+    # impl: RoCo2BaCo1RaCh
     impl: RoBaRaCoCh

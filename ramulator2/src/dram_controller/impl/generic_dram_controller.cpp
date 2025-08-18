@@ -224,6 +224,14 @@ class GenericDRAMController final : public IDRAMController, public Implementatio
 
     };
 
+    bool has_pending_requests() override {
+      return !pending.empty() || 
+             !m_active_buffer.buffer.empty() || 
+             !m_priority_buffer.buffer.empty() || 
+             !m_read_buffer.buffer.empty() || 
+             !m_write_buffer.buffer.empty();
+    };
+
 
   private:
     /**

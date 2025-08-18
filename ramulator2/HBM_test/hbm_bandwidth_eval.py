@@ -4,16 +4,18 @@ HBM Bandwidth Evaluation Script for Ramulator2
 
 This script:
 1. Generates memory traces using tracegen.py
-2. Runs Ramulator2 simulation with HBM3 configuration
-3. Parses HBM3 specifications directly from HBM3.cpp source code
-4. Calculates effective and theoretical bandwidth
-5. Reports bandwidth efficiency
+2. Creates a dynamic YAML config file based on base template with updated trace parameters
+3. Runs Ramulator2 simulation with HBM3 configuration
+4. Parses HBM3 specifications directly from HBM3.cpp source code
+5. Calculates effective and theoretical bandwidth
+6. Reports bandwidth efficiency
 
 Fixed issues:
 - Now reads HBM3 configuration from HBM3.cpp instead of YAML config
 - Correctly handles organization and timing presets
 - Properly calculates theoretical bandwidth using HBM3 specifications
 - Supports channel overrides from YAML config
+- Creates dynamic config file to avoid conflicts between static YAML and generated parameters
 """
 
 import os
@@ -22,13 +24,14 @@ import yaml
 import re
 
 # --- CONFIGURABLE ---
-NUM_INSTS = "100"  # Number of instructions to generate
+NUM_INSTS = "1000"  # Number of instructions to generate
 HBM_TEST_DIR = "HBM_test"
 TRACEGEN = f"./{HBM_TEST_DIR}/tracegen.py"
-TRACE_NAME = f"./{HBM_TEST_DIR}/trace/test_LStrace_{NUM_INSTS}.txt"
-CONFIG_NAME = f"./{HBM_TEST_DIR}/hbm_config.yaml"
+TRACE_NAME = f"./{HBM_TEST_DIR}/trace/test_LStrace_{NUM_INSTS}.trace"
+BASE_CONFIG_NAME = f"./{HBM_TEST_DIR}/hbm_config.yaml"  # Base template config
+CONFIG_NAME = f"./{HBM_TEST_DIR}/hbm_config_generated.yaml"  # Generated config for this run
 RAMULATOR = "./ramulator2"
-OUTPUT_NAME = "debug.txt"
+OUTPUT_NAME = f"./{HBM_TEST_DIR}/debug.txt"
 HBM3_CPP_FILE = "./src/dram/impl/HBM3.cpp"
 # Function to parse HBM3 specifications from C++ source
 def parse_hbm3_specs(hbm3_file):
@@ -102,22 +105,47 @@ def get_hbm_config_from_yaml(config_file):
     
     return org_preset, timing_preset, channel_override
 
+def create_dynamic_config(base_config_file, output_config_file, trace_path, num_insts):
+    """Create a new YAML config file based on base config with updated trace parameters"""
+    print(f"[INFO] Creating dynamic config file: {output_config_file}")
+    
+    # Load base configuration
+    with open(base_config_file, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    # Update Frontend section with dynamic parameters
+    if 'Frontend' not in config:
+        config['Frontend'] = {}
+    
+    config['Frontend']['path'] = trace_path
+    config['Frontend']['num_expected_insts'] = int(num_insts)
+    
+    # Save the new configuration
+    with open(output_config_file, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+    
+    print(f"[INFO] Updated config with:")
+    print(f"  trace path: {trace_path}")
+    print(f"  num_expected_insts: {num_insts}")
+    
+    return config
+
 # 1. Generate trace
 if os.path.exists(TRACE_NAME):
-    print("[INFO] Trace already exists.")
-else:
-    print("[INFO] Generating trace with tracegen.py...")
-    subprocess.run([
-        "python", TRACEGEN, "--type", "LStrace", "--pattern", "stream", "--num-insts", NUM_INSTS, "--output", TRACE_NAME
-    ], check=True)
+  print("[INFO] Removing existing trace file...")
+  os.remove(TRACE_NAME)
 
-# 2. Copy YAML config if needed
-if not os.path.exists(CONFIG_NAME):
-    for f in os.listdir(HBM_TEST_DIR):
-        if f.endswith(".yaml"):
-            print(f"[INFO] Copying config {f} from {HBM_TEST_DIR}")
-            os.system(f"cp {os.path.join(HBM_TEST_DIR, f)} {CONFIG_NAME}")
-            break
+print("[INFO] Generating trace with tracegen.py...")
+subprocess.run([
+  "python", TRACEGEN, "--type", "LStrace", "--pattern", "stream", "--num-insts", NUM_INSTS, "--output", TRACE_NAME, "--mem-type", "HBM3_40CH"
+], check=True)
+
+# 2. Create dynamic YAML config based on base config
+print("[INFO] Creating dynamic configuration file...")
+if not os.path.exists(BASE_CONFIG_NAME):
+    raise RuntimeError(f"Base config file {BASE_CONFIG_NAME} not found!")
+
+config = create_dynamic_config(BASE_CONFIG_NAME, CONFIG_NAME, TRACE_NAME, NUM_INSTS)
 
 # 3. Run Ramulator2
 print("[INFO] Running Ramulator2...")
@@ -155,7 +183,7 @@ print(f"[INFO] Found {len(org_presets)} organization presets: {list(org_presets.
 print(f"[INFO] Found {len(timing_presets)} timing presets: {list(timing_presets.keys())}")
 
 # 7. Get HBM configuration from YAML config
-print("[INFO] Reading HBM configuration from YAML...")
+print("[INFO] Reading HBM configuration from generated YAML...")
 org_preset_name, timing_preset_name, channel_override = get_hbm_config_from_yaml(CONFIG_NAME)
 
 if not org_preset_name or org_preset_name not in org_presets:
@@ -200,3 +228,11 @@ print(f"[RESULT] Effective Bandwidth: {bw_eff:.2f} GB/s")
 bw_theory = channels * dq_width * rate_mts / 8 / 1000  # GB/s
 print(f"[RESULT] Theoretical Bandwidth: {bw_theory:.2f} GB/s")
 print(f"[RESULT] Efficiency: {bw_eff / bw_theory * 100:.2f}%")
+
+# 10. Cleanup generated files (optional)
+print("[INFO] Cleaning up generated config file...")
+if os.path.exists(CONFIG_NAME):
+    os.remove(CONFIG_NAME)
+    print(f"[INFO] Removed {CONFIG_NAME}")
+
+print("[INFO] Bandwidth evaluation completed successfully!")

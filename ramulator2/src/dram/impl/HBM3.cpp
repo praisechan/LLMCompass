@@ -11,10 +11,15 @@ namespace Ramulator
   public:
     inline static const std::map<std::string, Organization> org_presets = {
         //   name     density   DQ    Ch Pch  Bg Ba   Ro     Co
-        {"HBM3_2Gb", {1 << 10, 64, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
-        {"HBM3_4Gb", {2 << 10, 64, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
-        {"HBM3_8Gb", {4 << 10, 64, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
-        {"HBM3_8Gb_80CH", {(4 << 10) * 80, 64, {80, 160, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
+        {"HBM3_2Gb", {2 << 10, 128, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
+        {"HBM3_4Gb", {4 << 10, 128, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
+        {"HBM3_8Gb", {8 << 10, 128, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
+        {"HBM3_8Gb_40CH", {(8 << 10) * 40, 128, {40, 80, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
+                                                                                   // //   name     density   DQ    Ch Pch  Bg Ba   Ro     Co
+                                                                                   // {"HBM3_2Gb", {1 << 10, 64, {1, 2, 4, 4, 1 << 13, 1 << 6}}},
+                                                                                   // {"HBM3_4Gb", {2 << 10, 64, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
+                                                                                   // {"HBM3_8Gb", {4 << 10, 64, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
+                                                                                   // {"HBM3_8Gb_80CH", {(4 << 10) * 80, 64, {80, 160, 4, 4, 1 << 15, 1 << 6}}}, // density, pCH는 어떻게 하지?
     };
 
     inline static const std::map<std::string, std::vector<int>> timing_presets = {
@@ -189,7 +194,7 @@ namespace Ramulator
     void set_organization()
     {
       // Channel width
-      m_channel_width = param_group("org").param<int>("channel_width").default_val(32);
+      m_channel_width = param_group("org").param<int>("channel_width").default_val(64);
 
       // Organization
       m_organization.count.resize(m_levels.size(), -1);

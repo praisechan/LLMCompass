@@ -80,6 +80,15 @@ class GenericDRAMSystem final : public IMemorySystem, public Implementation {
       }
     };
 
+    bool all_requests_completed() override {
+      for (auto controller : m_controllers) {
+        if (controller->has_pending_requests()) {
+          return false;
+        }
+      }
+      return true;
+    };
+
     float get_tCK() override {
       return m_dram->m_timing_vals("tCK_ps") / 1000.0f;
     }

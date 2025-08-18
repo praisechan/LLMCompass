@@ -47,6 +47,12 @@ def parse_args():
     help="The ratio between load ans store instructions"
   )
 
+  parser.add_argument(
+    "--mem-type", "-m", type=str, dest="mem_type",
+    required=True,
+    help="Specify the name of memory"
+  )
+
   args = parser.parse_args()
   return args
 
@@ -121,7 +127,7 @@ def gen_LStrace_load_only(args):
     sys.exit(-2)
 
   # constants
-  CACHE_LINE_SIZE = 64 # the main memory access granularity
+  CACHE_LINE_SIZE = 32 # For HBM, the cache line size is 32 bytes due to pseudo-channel
   RANDOM_SEED = 0
   random.seed(a=RANDOM_SEED)
   trace_file = open(args.out_file, "w")

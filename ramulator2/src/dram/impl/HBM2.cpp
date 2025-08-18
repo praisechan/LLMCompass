@@ -14,11 +14,14 @@ namespace Ramulator
         {"HBM2_2Gb", {2 << 10, 128, {1, 2, 4, 2, 1 << 14, 1 << 6}}},
         {"HBM2_4Gb", {4 << 10, 128, {1, 2, 4, 4, 1 << 14, 1 << 6}}},
         {"HBM2_8Gb", {8 << 10, 128, {1, 2, 4, 4, 1 << 15, 1 << 6}}},
+        {"HBM2_8Gb_40Ch", {(8 << 10) * 40, 128, {40, 80, 4, 4, 1 << 15, 1 << 6}}},
+        {"HBM2_8Gb_40Ch_2pch", {8 << 10, 128, {40, 2, 4, 4, 1 << 15, 1 << 6}}},
     };
 
     inline static const std::map<std::string, std::vector<int>> timing_presets = {
         //   name       rate   nBL  nCL  nRCDRD  nRCDWR  nRP  nRAS  nRC  nWR  nRTPS  nRTPL  nCWL  nCCDS  nCCDL  nRRDS  nRRDL  nWTRS  nWTRL  nRTW  nFAW  nRFC  nRFCSB  nREFI  nREFISB  nRREFD  tCK_ps
         {"HBM2_2Gbps", {2000, 2, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 1000}},
+        {"HBM2_2.4Gbps", {2400, 2, 7, 7, 7, 7, 17, 19, 8, 2, 3, 2, 1, 2, 2, 3, 3, 4, 3, 15, -1, 160, 3900, -1, 8, 833}},
         // TODO: Find more sources on HBM2 timings...
     };
 

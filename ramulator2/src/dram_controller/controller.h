@@ -49,6 +49,13 @@ class IDRAMController : public Clocked<IDRAMController> {
      * 
      */
     virtual void tick() = 0;
+    
+    /**
+     * @brief       Check if there are any pending requests in the controller.
+     * 
+     * @return      true if there are pending requests, false otherwise
+     */
+    virtual bool has_pending_requests() = 0;
    
 };
 

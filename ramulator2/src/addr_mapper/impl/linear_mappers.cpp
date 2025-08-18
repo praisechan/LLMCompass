@@ -33,7 +33,8 @@ namespace Ramulator
       m_addr_bits.resize(m_num_levels);
       for (size_t level = 0; level < m_addr_bits.size(); level++)
       {
-        m_addr_bits[level] = calc_log2(count[level]);
+        // m_addr_bits[level] = calc_log2_ceil(count[level]); // use calc_log2_ceil to cover non-power-of-2 channel numbers
+        m_addr_bits[level] = calc_log2(count[level]); // use calc_log2_ceil to cover non-power-of-2 channel numbers
       }
 
       // Last (Column) address have the granularity of the prefetch size
@@ -100,7 +101,7 @@ namespace Ramulator
       printf("[DEBUG] Address Translation - Original: 0x%lx", req.addr);
       if (req.addr_vec.size() >= 6)
       {
-        printf(" -> Channel: %d, Rank: %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
+        printf(" -> Channel: %d, Rank(Pseudo-Channel): %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
                req.addr_vec[0], req.addr_vec[1], req.addr_vec[2],
                req.addr_vec[3], req.addr_vec[4], req.addr_vec[5]);
       }
@@ -134,8 +135,8 @@ namespace Ramulator
     {
       req.addr_vec.resize(m_num_levels, -1);
       Addr_t addr = req.addr >> m_tx_offset;
-      req.addr_vec[0] = slice_lower_bits(addr, m_addr_bits[0]);
-      req.addr_vec[m_addr_bits.size() - 1] = slice_lower_bits(addr, m_addr_bits[m_addr_bits.size() - 1]);
+      req.addr_vec[0] = slice_lower_bits(addr, m_addr_bits[0]);                                           // Channel
+      req.addr_vec[m_addr_bits.size() - 1] = slice_lower_bits(addr, m_addr_bits[m_addr_bits.size() - 1]); // Column
       for (int i = 1; i <= m_row_bits_idx; i++)
       {
         req.addr_vec[i] = slice_lower_bits(addr, m_addr_bits[i]);
@@ -145,7 +146,7 @@ namespace Ramulator
       printf("[DEBUG] RoBaRaCoCh Address Translation - Original: 0x%lx", req.addr);
       if (req.addr_vec.size() >= 6)
       {
-        printf(" -> Channel: %d, Rank: %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
+        printf(" -> Channel: %d, Rank(Pseudo-Channel): %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
                req.addr_vec[0], req.addr_vec[1], req.addr_vec[2],
                req.addr_vec[3], req.addr_vec[4], req.addr_vec[5]);
       }
@@ -200,7 +201,72 @@ namespace Ramulator
       printf("[DEBUG] MOP4CLXOR Address Translation - Original: 0x%lx", req.addr);
       if (req.addr_vec.size() >= 6)
       {
-        printf(" -> Channel: %d, Rank: %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
+        printf(" -> Channel: %d, Rank(Pseudo-Channel): %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
+               req.addr_vec[0], req.addr_vec[1], req.addr_vec[2],
+               req.addr_vec[3], req.addr_vec[4], req.addr_vec[5]);
+      }
+      else
+      {
+        printf(" -> addr_vec: [");
+        for (size_t i = 0; i < req.addr_vec.size(); i++)
+        {
+          printf("%d", req.addr_vec[i]);
+          if (i < req.addr_vec.size() - 1)
+            printf(", ");
+        }
+        printf("]\n");
+      }
+    }
+  };
+
+  class RoCo2BaCo1RaCh final : public LinearMapperBase, public Implementation
+  {
+    RAMULATOR_REGISTER_IMPLEMENTATION(IAddrMapper, RoCo2BaCo1RaCh, "RoCo2BaCo1RaCh", "Applies a RoCo2BaCo1RaCh mapping with split column addressing.");
+
+  public:
+    void init() override {};
+
+    void setup(IFrontEnd *frontend, IMemorySystem *memory_system) override
+    {
+      LinearMapperBase::setup(frontend, memory_system);
+    }
+
+    void apply(Request &req) override
+    {
+      req.addr_vec.resize(m_num_levels, -1);
+      Addr_t addr = req.addr >> m_tx_offset;
+
+      // Split column into Co1 (3 bits) and Co2 (remaining bits)
+      int co1_bits = 3;
+      int co2_bits = m_addr_bits[m_col_bits_idx] - co1_bits;
+
+      // Mapping order: Row -> Co2 -> Bank -> Co1 -> Rank(Pseudo-Channel) -> Channel
+      // Extract Channel & Pseudo-Channel
+      req.addr_vec[0] = slice_lower_bits(addr, m_addr_bits[0]);
+      req.addr_vec[1] = slice_lower_bits(addr, m_addr_bits[1]);
+
+      // Extract Co1 (lower 3 bits of column)
+      int co1 = slice_lower_bits(addr, co1_bits);
+
+      // Extract Bank & Bankgroup
+      req.addr_vec[2] = slice_lower_bits(addr, m_addr_bits[2]);
+      req.addr_vec[3] = slice_lower_bits(addr, m_addr_bits[3]);
+
+      // Extract Co2 (remaining column bits)
+      int co2 = slice_lower_bits(addr, co2_bits);
+
+      // Extract Row
+      req.addr_vec[4] = slice_lower_bits(addr, m_addr_bits[4]);
+
+      // Combine Co1 and Co2 back into column address
+      req.addr_vec[m_col_bits_idx] = co1 | (co2 << co1_bits);
+
+      // DEBUG: Print address translation results
+      printf("[DEBUG] RoCo2BaCo1RaCh Address Translation - Original: 0x%lx", req.addr);
+      printf(" Co1: %d (3 bits), Co2: %d (%d bits)", co1, co2, co2_bits);
+      if (req.addr_vec.size() >= 6)
+      {
+        printf(" -> Channel: %d, Rank(Pseudo-Channel): %d, BankGroup: %d, Bank: %d, Row: %d, Column: %d\n",
                req.addr_vec[0], req.addr_vec[1], req.addr_vec[2],
                req.addr_vec[3], req.addr_vec[4], req.addr_vec[5]);
       }

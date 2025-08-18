@@ -57,6 +57,13 @@ class IMemorySystem : public TopLevel<IMemorySystem> {
     virtual void tick() = 0;
 
     /**
+     * @brief         Check if all memory controllers have finished processing all requests
+     * 
+     * @return        true if all controllers are idle (no pending requests), false otherwise
+     */
+    virtual bool all_requests_completed() = 0;
+
+    /**
      * @brief    Returns 
      * 
      * @return   int 

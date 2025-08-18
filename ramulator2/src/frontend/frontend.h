@@ -31,6 +31,13 @@ class IFrontEnd : public Clocked<IFrontEnd>, public TopLevel<IFrontEnd> {
 
     virtual bool is_finished() = 0;
 
+    /**
+     * @brief    Check if all requests have been issued AND all pending requests are completed
+     * 
+     * @return   true if all trace requests are issued and all memory system requests are completed
+     */
+    virtual bool all_requests_completed() { return is_finished(); };
+
     virtual void finalize() { 
       for (auto component : m_components) {
         component->finalize();
