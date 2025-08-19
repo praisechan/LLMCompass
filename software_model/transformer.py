@@ -61,7 +61,7 @@ class TransformerBlockInitComputationTP(Operator):
         self.K_transpose = Transpose(data_type)
         self.V_transpose = Transpose(data_type)
         if use_flash_attention:
-            self.flash_attention = FlashAttention(data_type)
+            self.flash_attention = FlashAttention(data_type, use_dram_simulator=use_dram_simulator)
         else:
             # Keep existing attention operators
             self.Q_mul_K = BatchedMatmul(data_type, use_dram_simulator=use_dram_simulator)

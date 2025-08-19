@@ -15,7 +15,7 @@ import copy
 from tqdm import tqdm
 
 class FlashAttention(Operator):
-    def __init__(self, data_type: DataType):
+    def __init__(self, data_type: DataType, use_dram_simulator: bool = False):
         super().__init__(0, 0, 0, 0, data_type)
         self.Q_shape = None
         self.K_shape = None
@@ -24,6 +24,8 @@ class FlashAttention(Operator):
         self.look_up_table = None
         self.dram_look_up_table = None
         self.mem_name = os.getenv("mem_name")
+
+        self.use_dram_simulator = use_dram_simulator
 
     def __call__(self, Q: Tensor, K: Tensor, V: Tensor) -> Tensor:
         # Q: [b, h, s, d_h], K: [b, h, d_h, s], V: [b, h, s, d_h]
@@ -256,12 +258,12 @@ class FlashAttention(Operator):
         qk_tile_standard = Matmul.L2TileSimulator(
             Br, Bc, d_h, computational_graph.data_type,
             temp_mapping, pcb_module, self.look_up_table, 
-            self.dram_look_up_table, self.mem_name
+            self.dram_look_up_table, self.mem_name, self.use_dram_simulator
         )
         av_tile_standard = Matmul.L2TileSimulator(
             Br, d_h, Bc, computational_graph.data_type,
             temp_mapping, pcb_module, self.look_up_table,
-            self.dram_look_up_table, self.mem_name
+            self.dram_look_up_table, self.mem_name, self.use_dram_simulator
         )
         
         # Pre-compute IO cycles for standard block sizes
@@ -329,12 +331,12 @@ class FlashAttention(Operator):
                         qk_tile = Matmul.L2TileSimulator(
                             actual_Br, Bc, d_h, computational_graph.data_type,
                             temp_mapping, pcb_module, self.look_up_table, 
-                            self.dram_look_up_table, self.mem_name
+                            self.dram_look_up_table, self.mem_name, self.use_dram_simulator
                         )
                         av_tile = Matmul.L2TileSimulator(
                             actual_Br, d_h, Bc, computational_graph.data_type,
                             temp_mapping, pcb_module, self.look_up_table,
-                            self.dram_look_up_table, self.mem_name
+                            self.dram_look_up_table, self.mem_name, self.use_dram_simulator
                         )
                         sij_compute_cycles = qk_tile.compute_cycle_count
                         accumulator_cycles = av_tile.compute_cycle_count
@@ -353,12 +355,12 @@ class FlashAttention(Operator):
                     qk_tile = Matmul.L2TileSimulator(
                         actual_Br, actual_Bc, d_h, computational_graph.data_type,
                         temp_mapping, pcb_module, self.look_up_table, 
-                        self.dram_look_up_table, self.mem_name
+                        self.dram_look_up_table, self.mem_name, self.use_dram_simulator
                     )
                     av_tile = Matmul.L2TileSimulator(
                         actual_Br, d_h, actual_Bc, computational_graph.data_type,
                         temp_mapping, pcb_module, self.look_up_table,
-                        self.dram_look_up_table, self.mem_name
+                        self.dram_look_up_table, self.mem_name, self.use_dram_simulator
                     )
                     sij_compute_cycles = qk_tile.compute_cycle_count
                     accumulator_cycles = av_tile.compute_cycle_count
@@ -417,7 +419,7 @@ class FlashAttention(Operator):
         
         temp_tile = Matmul.L2TileSimulator(
             M, N, 1, data_type, temp_mapping, pcb_module,
-            self.look_up_table, self.dram_look_up_table, self.mem_name
+            self.look_up_table, self.dram_look_up_table, self.mem_name, self.use_dram_simulator
         )
         
         # Return the IO cycle count (use M_K_io_cycle_count as representative)
