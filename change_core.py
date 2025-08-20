@@ -91,20 +91,20 @@ def run(overall_config):
         dir = f"./{run_name}/{device_type}/{model_type}"
         os.makedirs(dir, exist_ok=True)
         
-        auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
-            system, "heuristic-GPU"
-        )
+        # auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
+        #     system, "heuristic-GPU"
+        # )
         init_latency_simulated = model_init.compile_and_simulate(system, "heuristic-GPU")
-        print(f"{name}, {init_latency_simulated}, {auto_regression_latency_simulated}")
+        # print(f"{name}, {init_latency_simulated}, {auto_regression_latency_simulated}")
         with lock:
             with open(f"{dir}/core_size_results_init_valkyrie.csv", "a") as f:
                 f.write(
                     f"{name}, {compute_area_mm2+io_area_mm2}, {init_latency_simulated}, {init_latency_simulated*n_layers}, {model_init.simluate_log}\n"
                 )
-            with open(f"{dir}/core_size_results_ar_valkyrie.csv", "a") as f:
-                f.write(
-                    f"{name}, {compute_area_mm2+io_area_mm2}, {auto_regression_latency_simulated}, {auto_regression_latency_simulated*n_layers}, {model_auto_regression.simluate_log}\n"
-                )
+            # with open(f"{dir}/core_size_results_ar_valkyrie.csv", "a") as f:
+            #     f.write(
+            #         f"{name}, {compute_area_mm2+io_area_mm2}, {auto_regression_latency_simulated}, {auto_regression_latency_simulated*n_layers}, {model_auto_regression.simluate_log}\n"
+            #     )
 
     lock = Lock()
     simul_name = f"Batch{batch_size}_Input{input_seq_length}_Output{output_seq_length}"
@@ -144,7 +144,7 @@ input_seq_lengths = [8192, 16384, 32768]
 # input_seq_lengths = [131072]
 # batch_sizes = [1, 4, 16, 64]
 # batch_sizes = [128, 512, 2048]
-batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128]
+batch_sizes = [4, 16, 64, 128]
 output_seq_lengths = [1]
 use_dram_simulator = [False]
 
