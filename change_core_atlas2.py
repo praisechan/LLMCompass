@@ -140,11 +140,11 @@ device_types = ["H100"]
 model_types = ["Qwen-2.5-32B"]  # Add "Falcon3-10B" when ready
 # model_types = ["Llama-3.1-8B", "Qwen-2.5-14B"]  # Add "Falcon3-10B" when ready
 # input_seq_lengths = [8192, 16384, 32768, 65536, 131072]
-input_seq_lengths = [16384, 32768]
-# input_seq_lengths = [131072]
+# input_seq_lengths = [16384, 32768]
+input_seq_lengths = [32768]
 # batch_sizes = [1, 4, 16, 64]
 # batch_sizes = [128, 512, 2048]
-batch_sizes = [4, 16, 64, 128]
+batch_sizes = [4, 64]
 output_seq_lengths = [1]
 use_dram_simulator = [False]
 
