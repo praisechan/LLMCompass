@@ -1138,7 +1138,9 @@ class Matmul(Operator):
 
                 # If the combination doesn't exist, append it directly to the CSV in append mode
                 new_row = pd.DataFrame({"M": [M], "N": [N], "word_size": [word_size] ,"Size": [size], "Latency":[final_latency]})
-                new_row.to_csv(f"./dram_sim_model/{self.mem_name}/look_up_table.csv", mode='a', index=False, header=False)
+                csv_path = f"./dram_sim_model/{self.mem_name}/look_up_table.csv"
+                os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+                new_row.to_csv(csv_path, mode='a', index=False, header=False)
                 
                 new_index = len(dram_look_up_table)
                 dram_look_up_table.loc[new_index] = new_row.iloc[0]
@@ -1561,6 +1563,7 @@ class Matmul(Operator):
             except KeyError:
                 # print('not found in look up table')
                 config = f"./systolic_array_model/temp/systolic_array_{os.getpid()}.cfg"
+                os.makedirs(os.path.dirname(config), exist_ok=True)
                 with open(config, "w") as f:
                     f.writelines("[general]\n")
                     f.writelines("run_name = systolic_array\n\n")
@@ -1596,10 +1599,9 @@ class Matmul(Operator):
 
                 cycle_count = s.runner.single_layer_sim_object_list[0].total_cycles
                 util_rate = s.runner.single_layer_sim_object_list[0].overall_util
-                with open(
-                    f"./systolic_array_model/look_up_table_{array_height}_{array_width}.csv",
-                    "a",
-                ) as f:
+                csv_file_path = f"./systolic_array_model/look_up_table_{array_height}_{array_width}.csv"
+                os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+                with open(csv_file_path, "a") as f:
                     f.writelines(
                         f"{M},{N},{K},{array_height},{array_width},{dataflow},{cycle_count},{util_rate:.3f}\n"
                     )
