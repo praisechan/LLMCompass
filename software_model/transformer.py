@@ -21,9 +21,9 @@ from hardware_model.system import System
 
 class TransformerBlockInitComputationTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, use_flash_attention: bool = True, use_dram_simulator: bool = False):
+    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, use_flash_attention: bool = True, use_dram_simulator: bool = False, head_dim: int = None):
         super().__init__(0, 0, 0, 0, data_type, None)
-        
+
         self.d_model = d_model
         self.n_heads = n_heads
         self.n_kv_heads = n_kv_heads
@@ -31,18 +31,20 @@ class TransformerBlockInitComputationTP(Operator):
         self.device_count = device_count
         self.use_flash_attention = use_flash_attention
         self.use_dram_simulator = use_dram_simulator
+        self.head_dim = head_dim if head_dim is not None else d_model // n_heads
 
         # parameters per device
         d = d_model
-        self.Wq = Tensor([d, d // device_count], data_type)
+        attn_dim = n_heads * self.head_dim  # may differ from d_model (e.g. Qwen3-30B-A3B)
+        self.Wq = Tensor([d, attn_dim // device_count], data_type)
         # self.Wk = Tensor([d, d // device_count], data_type)
         # self.Wv = Tensor([d, d // device_count], data_type)
 
         # Apply Grouped Query Attention (GQA) for KV heads
-        self.Wk = Tensor([d, d // device_count // n_heads * n_kv_heads], data_type)
-        self.Wv = Tensor([d, d // device_count // n_heads * n_kv_heads], data_type)
-        
-        self.W0 = Tensor([d // device_count, d], data_type)
+        self.Wk = Tensor([d, n_kv_heads * self.head_dim // device_count], data_type)
+        self.Wv = Tensor([d, n_kv_heads * self.head_dim // device_count], data_type)
+
+        self.W0 = Tensor([attn_dim // device_count, d], data_type)
         self.W1 = Tensor([d, intermediate_dim // device_count], data_type)
         self.W2 = Tensor([intermediate_dim // device_count, d], data_type)
         # self.W1 = Tensor([d, 4 * d // device_count], data_type)
@@ -88,21 +90,22 @@ class TransformerBlockInitComputationTP(Operator):
         assert d == self.d_model
         h = self.n_heads
         dev_cnt = self.device_count
-        d_h = d // h
-        
+        d_h = self.head_dim
+        attn_dim = h * d_h
+
         # multi-head attention
-        Q = self.Q_proj(X, self.Wq)  # [b, s, d / dev_cnt]
-        assert Q.shape == [b, s, d // dev_cnt]
-        
+        Q = self.Q_proj(X, self.Wq)  # [b, s, attn_dim / dev_cnt]
+        assert Q.shape == [b, s, attn_dim // dev_cnt]
+
         # Applied Grouped Query Attention (GQA) for KV heads
-        K = self.K_proj(X, self.Wk)  # [b, s, d / dev_cnt / n_heads * n_kv_heads]
-        V = self.V_proj(X, self.Wv)  # [b, s, d / dev_cnt / n_heads * n_kv_heads]
-        
+        K = self.K_proj(X, self.Wk)  # [b, s, n_kv_heads * d_h / dev_cnt]
+        V = self.V_proj(X, self.Wv)  # [b, s, n_kv_heads * d_h / dev_cnt]
+
         # Replicate heads to match Q's head count for GQA
-        K = self.K_repeat(K, self.n_heads // self.n_kv_heads, dim=-1)  # [b, s, d / dev_cnt]
-        V = self.V_repeat(V, self.n_heads // self.n_kv_heads, dim=-1)  # [b, s, d / dev_cnt]
-        assert K.shape == [b, s, d // dev_cnt]
-        
+        K = self.K_repeat(K, self.n_heads // self.n_kv_heads, dim=-1)  # [b, s, attn_dim / dev_cnt]
+        V = self.V_repeat(V, self.n_heads // self.n_kv_heads, dim=-1)  # [b, s, attn_dim / dev_cnt]
+        assert K.shape == [b, s, attn_dim // dev_cnt]
+
         Q = self.Q_reshape(Q, [b, s, h // dev_cnt, d_h])
         K = self.K_reshape(K, [b, s, h // dev_cnt, d_h])
         V = self.V_reshape(V, [b, s, h // dev_cnt, d_h])
@@ -124,8 +127,8 @@ class TransformerBlockInitComputationTP(Operator):
         assert H.shape == [b, h // dev_cnt, s, d_h]
         H = self.H_transpose(H, [0, 2, 1, 3])  #  [b, s, h / dev_cnt, d_h]
         assert H.shape == [b, s, h // dev_cnt, d_h]
-        H = self.H_reshape(H, [b, s, d // dev_cnt])
-        assert H.shape == [b, s, d // dev_cnt]
+        H = self.H_reshape(H, [b, s, attn_dim // dev_cnt])
+        assert H.shape == [b, s, attn_dim // dev_cnt]
         H0 = self.H_matmul0(H, self.W0)  #  [b, s, d]
         assert H0.shape == [b, s, d]
         H0 = self.layer_norm0(H0)
@@ -425,7 +428,7 @@ class TransformerBlockInitComputationTP(Operator):
 
 class TransformerBlockAutoRegressionTP(Operator):
     #def __init__(self, d_model, n_heads, device_count, data_type: DataType):
-    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, compute_mode: str = "default", use_dram_simulator: bool = False):
+    def __init__(self, d_model, n_heads, n_kv_heads, intermediate_dim, device_count, data_type: DataType, compute_mode: str = "default", use_dram_simulator: bool = False, head_dim: int = None):
         super().__init__(0, 0, 0, 0, data_type)
         self.d_model = d_model
         self.n_heads = n_heads
@@ -433,17 +436,19 @@ class TransformerBlockAutoRegressionTP(Operator):
         self.intermediate_dim = intermediate_dim
         self.device_count = device_count
         self.use_dram_simulator = use_dram_simulator
+        self.head_dim = head_dim if head_dim is not None else d_model // n_heads
         # parameters per device
         d = d_model
-        self.Wq = Tensor([d, d // device_count], data_type)
+        attn_dim = n_heads * self.head_dim  # may differ from d_model (e.g. Qwen3-30B-A3B)
+        self.Wq = Tensor([d, attn_dim // device_count], data_type)
         # self.Wk = Tensor([d, d // device_count], data_type)
         # self.Wv = Tensor([d, d // device_count], data_type)
 
         # Apply Grouped Query Attention (GQA) for KV heads
-        self.Wk = Tensor([d, d // device_count // n_heads * n_kv_heads], data_type)
-        self.Wv = Tensor([d, d // device_count // n_heads * n_kv_heads], data_type)
-        
-        self.W0 = Tensor([d // device_count, d], data_type)
+        self.Wk = Tensor([d, n_kv_heads * self.head_dim // device_count], data_type)
+        self.Wv = Tensor([d, n_kv_heads * self.head_dim // device_count], data_type)
+
+        self.W0 = Tensor([attn_dim // device_count, d], data_type)
         self.W1 = Tensor([d, self.intermediate_dim // device_count], data_type)
         self.W2 = Tensor([self.intermediate_dim // device_count, d], data_type)
         # operators per device
@@ -489,25 +494,26 @@ class TransformerBlockAutoRegressionTP(Operator):
         s = seq_len
         h = self.n_heads
         dev_cnt = self.device_count
-        d_h = d // h
+        d_h = self.head_dim
+        attn_dim = h * d_h
 
         # KV cache
         K_cache = Tensor([b, h // dev_cnt, d_h, s], self.data_type)
         V_cache = Tensor([b, h // dev_cnt, s, d_h], self.data_type)
 
         # multi-head attention
-        q = self.Q_proj(x, self.Wq)  # [b, 1, d / dev_cnt]
-        assert q.shape == [b, 1, d // dev_cnt]
+        q = self.Q_proj(x, self.Wq)  # [b, 1, attn_dim / dev_cnt]
+        assert q.shape == [b, 1, attn_dim // dev_cnt]
 
         # Applied Grouped Query Attention (GQA) for KV heads
-        k = self.K_proj(x, self.Wk)  # [b, 1, d / dev_cnt / n_heads * n_kv_heads]
-        v = self.V_proj(x, self.Wv)  # [b, 1, d / dev_cnt / n_heads * n_kv_heads]        
+        k = self.K_proj(x, self.Wk)  # [b, 1, n_kv_heads * d_h / dev_cnt]
+        v = self.V_proj(x, self.Wv)  # [b, 1, n_kv_heads * d_h / dev_cnt]
 
         # Replicate heads to match Q's head count for GQA
-        k = self.K_repeat(k, self.n_heads // self.n_kv_heads, dim=-1)  # [b, 1, d / dev_cnt]
-        v = self.V_repeat(v, self.n_heads // self.n_kv_heads, dim=-1)  # [b, 1, d / dev_cnt]
-        assert k.shape == [b, 1, d // dev_cnt] 
-                       
+        k = self.K_repeat(k, self.n_heads // self.n_kv_heads, dim=-1)  # [b, 1, attn_dim / dev_cnt]
+        v = self.V_repeat(v, self.n_heads // self.n_kv_heads, dim=-1)  # [b, 1, attn_dim / dev_cnt]
+        assert k.shape == [b, 1, attn_dim // dev_cnt]
+
         q = self.Q_reshape(q, [b, 1, h // dev_cnt, d_h])
         k = self.K_reshape(k, [b, 1, h // dev_cnt, d_h])
         v = self.V_reshape(v, [b, 1, h // dev_cnt, d_h])
@@ -528,8 +534,8 @@ class TransformerBlockAutoRegressionTP(Operator):
         assert h0.shape == [b, h // dev_cnt, 1, d_h]
         h0 = self.H_transpose(h0, [0, 2, 1, 3])  #  [b, 1, h / dev_cnt, d_h]
         assert h0.shape == [b, 1, h // dev_cnt, d_h]
-        h0 = self.H_reshape(h0, [b, 1, d // dev_cnt])
-        assert h0.shape == [b, 1, d // dev_cnt]
+        h0 = self.H_reshape(h0, [b, 1, attn_dim // dev_cnt])
+        assert h0.shape == [b, 1, attn_dim // dev_cnt]
         h0 = self.H_matmul0(h0, self.W0)  #  [b, 1, d]
         assert h0.shape == [b, 1, d]
         h0 = self.layer_norm0(h0)

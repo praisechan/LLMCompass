@@ -1,0 +1,211 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1781357772262,
+  "projectRoot": "/home/juchanlee/LLMCompass",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "DRAMsim3": {
+      "path": "DRAMsim3",
+      "purpose": null,
+      "fileCount": 10,
+      "lastAccessed": 1781357772252,
+      "keyFiles": [
+        "CMakeLists.txt",
+        "LICENSE",
+        "Makefile",
+        "README.md",
+        "run_SOM_LPDDR4_2.sh"
+      ]
+    },
+    "ae": {
+      "path": "ae",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1781357772257,
+      "keyFiles": [
+        "__init__.py"
+      ]
+    },
+    "configs": {
+      "path": "configs",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1781357772258,
+      "keyFiles": [
+        "GA100.json",
+        "ga102_template.json",
+        "generation_system.json",
+        "latency_design.json",
+        "mi210.json"
+      ]
+    },
+    "cost_model": {
+      "path": "cost_model",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1781357772258,
+      "keyFiles": [
+        "__init__.py",
+        "cost_examples.py",
+        "cost_model.py",
+        "regfile_area.py"
+      ]
+    },
+    "design_space_exploration": {
+      "path": "design_space_exploration",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1781357772258,
+      "keyFiles": [
+        "__init__.py",
+        "dse.py"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1781357772258,
+      "keyFiles": [
+        "flashattentionv2.pdf",
+        "run.md"
+      ]
+    },
+    "dram_sim_model": {
+      "path": "dram_sim_model",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1781357772259,
+      "keyFiles": []
+    },
+    "hardware_model": {
+      "path": "hardware_model",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1781357772259,
+      "keyFiles": [
+        "__init__.py",
+        "arch_template.py",
+        "compute_module.py",
+        "device.py",
+        "interconnect.py"
+      ]
+    },
+    "inference_LUT": {
+      "path": "inference_LUT",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1781357772259,
+      "keyFiles": []
+    },
+    "inference_LUT_with_masked": {
+      "path": "inference_LUT_with_masked",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1781357772259,
+      "keyFiles": []
+    },
+    "ramulator2": {
+      "path": "ramulator2",
+      "purpose": null,
+      "fileCount": 26,
+      "lastAccessed": 1781357772259,
+      "keyFiles": [
+        "CMakeLists.txt",
+        "HBM3_BANDWIDTH_README.md",
+        "LICENSE",
+        "README.md",
+        "advanced_bandwidth_test.py"
+      ]
+    },
+    "software_model": {
+      "path": "software_model",
+      "purpose": null,
+      "fileCount": 10,
+      "lastAccessed": 1781357772260,
+      "keyFiles": [
+        "__init__.py",
+        "communication_primitives.py",
+        "flash_attention.py",
+        "gelu.py",
+        "layernorm.py"
+      ]
+    },
+    "systolic_array_model": {
+      "path": "systolic_array_model",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1781357772260,
+      "keyFiles": [
+        "look_up_table.csv",
+        "look_up_table_128_128.csv",
+        "look_up_table_16_16.csv",
+        "look_up_table_32_32.csv",
+        "look_up_table_64_64.csv"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "software_model/transformer.py",
+      "accessCount": 12,
+      "lastAccessed": 1781359283730,
+      "type": "file"
+    },
+    {
+      "path": "change_core_atlas2_for_qwen3.py",
+      "accessCount": 10,
+      "lastAccessed": 1781361126126,
+      "type": "file"
+    },
+    {
+      "path": "software_model/utils.py",
+      "accessCount": 1,
+      "lastAccessed": 1781358782900,
+      "type": "file"
+    },
+    {
+      "path": "design_space_exploration/dse.py",
+      "accessCount": 1,
+      "lastAccessed": 1781358782981,
+      "type": "file"
+    },
+    {
+      "path": "software_model/matmul.py",
+      "accessCount": 1,
+      "lastAccessed": 1781358786019,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
