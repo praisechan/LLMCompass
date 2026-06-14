@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"conda run -n retroinfer python -c \\\"from scalesim.scale_sim import scalesim; print('scalesim ok')\\\" 2>&1; conda run -n cosmos-predict25-ffmpeg python -c \\\"from scalesim.scale_sim import sc...",
+  "error": "Exit code 127\nscalesim ok\n\n/tmp/tmpaglep02c: line 3: python: command not found\n\nERROR conda.cli.main_run:execute(127): `conda run python -c from scalesim.scale_sim import scalesim; print('scalesim ok')` failed. (See above for error)",
+  "timestamp": "2026-06-14T05:38:00.398Z",
+  "retry_count": 3
+}

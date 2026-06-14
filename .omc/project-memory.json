@@ -178,8 +178,8 @@
   "hotPaths": [
     {
       "path": "software_model/transformer.py",
-      "accessCount": 12,
-      "lastAccessed": 1781359283730,
+      "accessCount": 15,
+      "lastAccessed": 1781415345884,
       "type": "file"
     },
     {
@@ -189,9 +189,33 @@
       "type": "file"
     },
     {
+      "path": "software_model/matmul.py",
+      "accessCount": 3,
+      "lastAccessed": 1781415303793,
+      "type": "file"
+    },
+    {
       "path": "software_model/utils.py",
-      "accessCount": 1,
-      "lastAccessed": 1781358782900,
+      "accessCount": 2,
+      "lastAccessed": 1781415298005,
+      "type": "file"
+    },
+    {
+      "path": "change_core_atlas2_for_realGPUcomparison.py",
+      "accessCount": 2,
+      "lastAccessed": 1781415515284,
+      "type": "file"
+    },
+    {
+      "path": "comparison_report.md",
+      "accessCount": 2,
+      "lastAccessed": 1781420786455,
+      "type": "file"
+    },
+    {
+      "path": "compare_llmcompass_vs_real_gpu.py",
+      "accessCount": 2,
+      "lastAccessed": 1781420795429,
       "type": "file"
     },
     {
@@ -201,9 +225,27 @@
       "type": "file"
     },
     {
-      "path": "software_model/matmul.py",
+      "path": "software_model/layernorm.py",
       "accessCount": 1,
-      "lastAccessed": 1781358786019,
+      "lastAccessed": 1781415297005,
+      "type": "file"
+    },
+    {
+      "path": "software_model/gelu.py",
+      "accessCount": 1,
+      "lastAccessed": 1781415297550,
+      "type": "file"
+    },
+    {
+      "path": "benchmark_real_gpu.py",
+      "accessCount": 1,
+      "lastAccessed": 1781415391755,
+      "type": "file"
+    },
+    {
+      "path": "real_gpu_benchmark_results.csv",
+      "accessCount": 1,
+      "lastAccessed": 1781415487756,
       "type": "file"
     }
   ],
