@@ -117,8 +117,8 @@ def main():
     # Define the options for each parameter
     case_names = ["inference_LUT_with_masked_ICCAD"]
     device_types = ["H100"]
-    model_types = ["Llama-3.1-8B"]  # Add "Falcon3-10B" when ready
-    input_seq_lengths = [8192]
+    model_types = ["Llama-3.1-8B", "Qwen-2.5-14B", "Qwen-2.5-32B"]
+    input_seq_lengths = [8192, 16384, 24576, 32768, 40960]
     batch_sizes = [1,2,4,8,16,32,64,128]
     output_seq_lengths = [1]
     use_dram_simulator = [False]
